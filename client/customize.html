@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="icon-dark.png">
+  <title>iConnect – Customize Your Plan</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    /* =============================================
+       CSS VARIABLES — identical to index.html
+       ============================================= */
+    :root {
+      --bg-primary:    #08080f;
+      --bg-secondary:  #0f0f1a;
+      --bg-card:       #13131e;
+      --bg-card-hover: #1a1a28;
+      --border:        #252538;
+      --border-light:  #35355a;
+      --text-primary:  #eeeeff;
+      --text-secondary:#9898bb;
+      --text-muted:    #555570;
+      --accent:        #7c5cfc;
+      --accent-light:  #a07fff;
+      --accent-glow:   rgba(124,92,252,0.25);
+      --success:       #22e87a;
+      --warning:       #ffb400;
+      --gradient:      linear-gradient(135deg, #7c5cfc 0%, #00d4ff 100%);
+      --shadow-sm:     0 2px 10px rgba(0,0,0,0.35);
+      --shadow-md:     0 8px 36px rgba(0,0,0,0.45);
+      --shadow-lg:     0 24px 64px rgba(0,0,0,0.6);
+      --r-sm: 8px;
+      --r-md: 16px;
+      --r-lg: 24px;
+      --ease: 0.28s ease;
+    }
+
+    [data-theme="light"] {
+      --bg-primary:    #f5f3fa;
+      --bg-secondary:  #ede9f5;
+      --bg-card:       #ffffff;
+      --bg-card-hover: #f8f5ff;
+      --border:        #e0d8f0;
+      --border-light:  #cfc5e8;
+      --text-primary:  #1c1535;
+      --text-secondary:#44396a;
+      --text-muted:    #7a6fa0;
+      --accent:        #6c3ce0;
+      --accent-light:  #7c4ff0;
+      --accent-glow:   rgba(108,60,224,0.12);
+      --shadow-sm:     0 2px 10px rgba(108,60,224,0.06);
+      --shadow-md:     0 8px 36px rgba(108,60,224,0.10);
+      --shadow-lg:     0 24px 64px rgba(108,60,224,0.14);
+    }
+
+    /* =============================================
+       RESET & BASE
+       ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.65;
+      transition: background var(--ease), color var(--ease);
+      min-height: 100vh;
+    }
+
+    /* =============================================
+       NAV
+       ============================================= */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(8,8,15,0.88);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: background var(--ease);
+    }
+    [data-theme="light"] nav { background: rgba(255,255,255,0.92); }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+    }
+    .nav-logo img {
+      height: 44px;
+      width: auto;
+      display: block;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+
+    .theme-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid var(--border-light); background: var(--bg-card);
+      color: var(--text-secondary); font-size: 1.05rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all var(--ease);
+    }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 20px; border-radius: var(--r-sm);
+      font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; border: none; text-decoration: none;
+      transition: all var(--ease); white-space: nowrap;
+    }
+    .btn-ghost {
+      background: transparent; color: var(--text-primary);
+      border: 1px solid var(--border-light);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* =============================================
+       BREADCRUMB
+       ============================================= */
+    .breadcrumb {
+      max-width: 1200px; margin: 0 auto;
+      padding: 18px 24px 0;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.84rem; color: var(--text-muted);
+    }
+    .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color var(--ease); }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb .sep { color: var(--border-light); }
+    .breadcrumb .crumb-current { color: var(--text-secondary); }
+
+    /* =============================================
+       PAGE HEADER — selected plan summary
+       ============================================= */
+    .page-header {
+      max-width: 1200px; margin: 0 auto;
+      padding: 20px 24px 0;
+    }
+
+    .plan-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 28px 36px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 20px;
+      position: relative; overflow: hidden;
+    }
+    /* gradient top bar */
+    .plan-banner::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--gradient);
+    }
+
+    .banner-left {}
+
+    .banner-step {
+      font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 8px;
+    }
+
+    .banner-name {
+      font-size: 1.9rem; font-weight: 900; letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .banner-meta {
+      display: flex; gap: 18px; flex-wrap: wrap;
+      font-size: 0.9rem; color: var(--text-secondary);
+    }
+    .banner-meta-item { display: flex; align-items: center; gap: 6px; }
+    .banner-meta-item strong { color: var(--text-primary); }
+    .meta-dot { color: var(--border-light); }
+
+    .banner-right { text-align: right; }
+    .banner-price-label {
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 4px;
+    }
+    .banner-price-amount {
+      font-size: 2.6rem; font-weight: 900; line-height: 1;
+      background: var(--gradient);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .banner-price-period { font-size: 0.88rem; color: var(--text-secondary); }
+
+    /* =============================================
+       MAIN 2-COLUMN LAYOUT
+       ============================================= */
+    .customize-layout {
+      max-width: 1200px; margin: 0 auto;
+      padding: 28px 24px 80px;
+      display: grid;
+      grid-template-columns: 1fr 390px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* =============================================
+       LEFT COLUMN — add-on cards
+       ============================================= */
+    .addons-section { margin-bottom: 36px; }
+
+    .addons-section-header { margin-bottom: 18px; }
+
+    .addons-section-title {
+      font-size: 0.72rem; font-weight: 800;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 5px;
+    }
+
+    .addons-section-sub {
+      font-size: 0.9rem; color: var(--text-secondary);
+    }
+
+    /* Individual add-on card */
+    .addon-card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 18px 20px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 14px;
+      transition: all var(--ease);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .addon-card:hover {
+      border-color: var(--border-light);
+      background: var(--bg-card-hover);
+    }
+    .addon-card.selected {
+      border-color: var(--accent);
+      background: rgba(124,92,252,0.07);
+      box-shadow: 0 0 0 1px var(--accent), 0 4px 22px var(--accent-glow);
+    }
+
+    /* icon box */
+    .addon-icon {
+      width: 46px; height: 46px; flex-shrink: 0;
+      background: var(--bg-secondary);
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      transition: background var(--ease);
+    }
+    .addon-card.selected .addon-icon { background: var(--accent-glow); }
+
+    /* text body */
+    .addon-body { flex: 1; min-width: 0; }
+    .addon-name { font-size: 0.97rem; font-weight: 700; margin-bottom: 3px; }
+    .addon-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
+
+    /* right: price + toggle */
+    .addon-right {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+      flex-shrink: 0;
+    }
+    .addon-price-wrap { text-align: right; }
+    .addon-price {
+      font-size: 1rem; font-weight: 800;
+      color: var(--text-primary); white-space: nowrap;
+    }
+    .addon-price-period { font-size: 0.72rem; color: var(--text-muted); display: block; }
+
+    /* toggle pill */
+    .toggle-pill {
+      width: 46px; height: 25px;
+      background: var(--border-light);
+      border-radius: 100px;
+      position: relative;
+      transition: background var(--ease);
+      flex-shrink: 0;
+    }
+    .toggle-pill::after {
+      content: '';
+      position: absolute; top: 3px; left: 3px;
+      width: 19px; height: 19px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform var(--ease);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+    }
+    .addon-card.selected .toggle-pill { background: var(--accent); }
+    .addon-card.selected .toggle-pill::after { transform: translateX(21px); }
+
+    /* =============================================
+       RIGHT COLUMN — STICKY SUMMARY PANEL
+       ============================================= */
+    .summary-panel {
+      position: sticky;
+      top: 82px;                  /* clears the sticky nav */
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .summary-top {
+      padding: 20px 22px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-top-label {
+      font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .summary-plan-name {
+      font-size: 1.1rem; font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .summary-body { padding: 20px 22px; }
+
+    /* section group inside summary */
+    .sum-group { margin-bottom: 18px; }
+
+    .sum-group-title {
+      font-size: 0.68rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 10px;
+    }
+
+    /* row: name on left, value on right */
+    .sum-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 4px 0;
+      font-size: 0.87rem; color: var(--text-secondary);
+    }
+    .sum-row-name { flex: 1; padding-right: 10px; }
+    .sum-row-val  { font-weight: 600; white-space: nowrap; }
+
+    /* add-on rows (indented, accent colour) */
+    .sum-row.sum-addon {
+      font-size: 0.82rem; color: var(--accent-light);
+      padding-left: 8px;
+    }
+    .sum-row.sum-addon .sum-row-name::before { content: '+ '; }
+
+    /* total row */
+    .sum-row.sum-total {
+      font-size: 1rem; font-weight: 800;
+      color: var(--text-primary);
+      padding: 10px 0 4px;
+      border-top: 1px solid var(--border);
+      margin-top: 6px;
+    }
+    .sum-row.sum-total .sum-row-val {
+      font-size: 1.05rem;
+      background: var(--gradient);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* empty state */
+    .sum-empty {
+      font-size: 0.8rem; color: var(--text-muted);
+      font-style: italic; padding: 2px 0 6px;
+    }
+
+    /* CPM highlight box */
+    .cpm-box {
+      background: var(--bg-secondary);
+      border-radius: var(--r-sm);
+      padding: 11px 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+    }
+    .cpm-box-label { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
+    .cpm-box-val   { font-size: 1rem; font-weight: 800; color: var(--success); }
+
+    .sum-divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+    /* CTA + back link */
+    .summary-footer { padding: 0 22px 22px; }
+
+    .cta-btn {
+      display: block; width: 100%;
+      padding: 14px; border-radius: var(--r-sm);
+      font-size: 1rem; font-weight: 800;
+      cursor: pointer; border: none;
+      background: var(--gradient); color: #fff;
+      box-shadow: 0 4px 22px var(--accent-glow);
+      transition: all var(--ease);
+      text-align: center;
+    }
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--accent-glow); }
+
+    .back-link {
+      display: block; text-align: center;
+      margin-top: 12px;
+      font-size: 0.84rem; color: var(--text-muted);
+      text-decoration: none; transition: color var(--ease);
+    }
+    .back-link:hover { color: var(--accent); }
+
+    /* =============================================
+       FOOTER
+       ============================================= */
+    footer {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      padding: 36px 24px;
+      text-align: center;
+    }
+    footer .f-logo { margin-bottom: 8px; }
+    footer .f-logo img { height: 40px; width: auto; display: block; margin: 0 auto; }
+    footer p { color: var(--text-muted); font-size: 0.85rem; }
+
+    /* =============================================
+       RESPONSIVE
+       ============================================= */
+    @media (max-width: 960px) {
+      .customize-layout {
+        grid-template-columns: 1fr;
+      }
+      /* unpin summary on mobile — shows below add-ons */
+      .summary-panel { position: static; }
+      .plan-banner { flex-direction: column; }
+      .banner-right { text-align: left; }
+    }
+
+    @media (max-width: 640px) {
+      nav { padding: 12px 16px; }
+      .page-header { padding: 16px 16px 0; }
+      .plan-banner { padding: 22px 18px; }
+      .customize-layout { padding: 18px 16px 60px; }
+      .banner-name { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================================================
+     NAV
+     =================================================== -->
+<nav>
+  <a href="pricing.html" class="nav-logo">
+    <img class="nav-logo-img" src="logo-dark.png" alt="iConnect" />
+  </a>
+  <div class="nav-right">
+    <a href="../admin/calculator.html" class="btn btn-ghost">&#8592; Back to Admin</a>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+    <a href="pricing.html" class="btn btn-ghost">&#8592; Back to Pricing</a>
+  </div>
+</nav>
+
+
+<!-- ===================================================
+     BREADCRUMB
+     =================================================== -->
+<div class="breadcrumb">
+  <a href="pricing.html">Pricing</a>
+  <span class="sep">›</span>
+  <span class="crumb-current" id="crumbPlan">Customize Plan</span>
+</div>
+
+
+<!-- ===================================================
+     PAGE HEADER — selected plan at a glance
+     =================================================== -->
+<div class="page-header">
+  <div class="plan-banner">
+    <div class="banner-left">
+      <div class="banner-step">Step 2 of 2 — Customize Your Plan</div>
+      <div class="banner-name" id="bannerName">—</div>
+      <div class="banner-meta">
+        <div class="banner-meta-item">
+          <span id="bannerMinutes">—</span> <span>minutes / month</span>
+        </div>
+        <span class="meta-dot">·</span>
+        <div class="banner-meta-item" id="bannerOverage">—</div>
+      </div>
+    </div>
+    <div class="banner-right">
+      <div class="banner-price-label">Base Monthly Price</div>
+      <div class="banner-price-amount" id="bannerPrice">$0</div>
+      <div class="banner-price-period">/ month</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     MAIN LAYOUT
+     =================================================== -->
+<div class="customize-layout">
+
+  <!-- ======== LEFT — ADD-ON CARDS ======== -->
+  <div class="customize-left">
+
+    <!-- Monthly add-ons -->
+    <div class="addons-section">
+      <div class="addons-section-header">
+        <div class="addons-section-title">Monthly Add-Ons</div>
+        <div class="addons-section-sub">Enhance your plan with recurring services. Toggle to add or remove.</div>
+      </div>
+      <div id="monthlyAddonCards"></div>
+    </div>
+
+    <!-- One-time add-ons -->
+    <div class="addons-section">
+      <div class="addons-section-header">
+        <div class="addons-section-title">One-Time Services</div>
+        <div class="addons-section-sub">Professional setup services billed once at launch.</div>
+      </div>
+      <div id="oneTimeAddonCards"></div>
+    </div>
+
+  </div><!-- /left -->
+
+
+  <!-- ======== RIGHT — STICKY SUMMARY ======== -->
+  <div class="summary-panel">
+
+    <div class="summary-top">
+      <div class="summary-top-label">Order Summary</div>
+      <div class="summary-plan-name" id="summaryName">—</div>
+    </div>
+
+    <div class="summary-body">
+
+      <!-- MONTHLY breakdown -->
+      <div class="sum-group">
+        <div class="sum-group-title">Monthly</div>
+
+        <div class="sum-row">
+          <span class="sum-row-name">Base Package</span>
+          <span class="sum-row-val" id="sumBase">$0</span>
+        </div>
+
+        <!-- injected monthly add-on rows -->
+        <div id="sumMonthlyRows"></div>
+
+        <div class="sum-row sum-total">
+          <span class="sum-row-name">Monthly Total</span>
+          <span class="sum-row-val" id="sumMonthlyTotal">$0</span>
+        </div>
+      </div>
+
+      <!-- Updated CPM callout -->
+      <div class="cpm-box">
+        <span class="cpm-box-label">Updated Cost per Minute</span>
+        <span class="cpm-box-val" id="sumCPM">$0.0000/min</span>
+      </div>
+
+      <div class="sum-divider"></div>
+
+      <!-- ONE-TIME breakdown -->
+      <div class="sum-group">
+        <div class="sum-group-title">One-Time</div>
+
+        <div class="sum-row">
+          <span class="sum-row-name">Setup Fee</span>
+          <span class="sum-row-val" id="sumSetup">$0</span>
+        </div>
+
+        <!-- injected one-time add-on rows -->
+        <div id="sumOneTimeRows"></div>
+
+        <div class="sum-row sum-total">
+          <span class="sum-row-name">One-Time Total</span>
+          <span class="sum-row-val" id="sumOneTimeTotal">$0</span>
+        </div>
+      </div>
+
+      <!-- CARRIER breakdown (conditional) -->
+      <div class="sum-group" id="sumCarrierGroup" style="display:none;">
+        <div class="sum-divider"></div>
+        <div class="sum-group-title">Phone Carrier</div>
+        <div class="sum-row">
+          <span class="sum-row-name" id="sumCarrierLabel">Twilio</span>
+          <span class="sum-row-val" id="sumCarrierMonthly">$0/mo</span>
+        </div>
+        <div class="sum-row" id="sumCarrierSetupRow" style="display:none;">
+          <span class="sum-row-name">Carrier Setup</span>
+          <span class="sum-row-val" id="sumCarrierSetup">$0</span>
+        </div>
+      </div>
+
+      <!-- GRAND TOTAL -->
+      <div class="sum-divider"></div>
+      <div class="sum-group">
+        <div class="sum-group-title">Grand Total</div>
+        <div class="sum-row">
+          <span class="sum-row-name">Base Package</span>
+          <span class="sum-row-val" id="sumGrandBase">$0/mo</span>
+        </div>
+        <div class="sum-row" id="sumGrandAddonsRow" style="display:none;">
+          <span class="sum-row-name">+ Add-Ons</span>
+          <span class="sum-row-val" id="sumGrandAddons">$0/mo</span>
+        </div>
+        <div class="sum-row" id="sumGrandCarrierRow" style="display:none;">
+          <span class="sum-row-name">+ Phone Carrier</span>
+          <span class="sum-row-val" id="sumGrandCarrier">$0/mo</span>
+        </div>
+        <div class="sum-divider" style="margin:8px 0;"></div>
+        <div class="sum-row sum-total" style="font-size:1.05rem;">
+          <span class="sum-row-name">Monthly Total</span>
+          <span class="sum-row-val" id="sumGrandMonthly">$0</span>
+        </div>
+        <div class="sum-row sum-total">
+          <span class="sum-row-name">One-Time Total</span>
+          <span class="sum-row-val" id="sumGrandOneTime">$0</span>
+        </div>
+        <div id="sumGrandIncludes" style="font-size:0.72rem;color:var(--text-muted);margin-top:6px;"></div>
+      </div>
+
+    </div><!-- /summary-body -->
+
+    <div class="summary-footer">
+      <div id="quoteForm">
+        <div style="margin-bottom:12px;">
+          <input type="text" id="quoteName" placeholder="Your Name" required style="width:100%;padding:10px 14px;background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:0.88rem;margin-bottom:8px;" />
+          <input type="email" id="quoteEmail" placeholder="Your Email" required style="width:100%;padding:10px 14px;background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:0.88rem;margin-bottom:8px;" />
+          <input type="text" id="quoteCompany" placeholder="Company (optional)" style="width:100%;padding:10px 14px;background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:0.88rem;" />
+        </div>
+        <button class="cta-btn" id="btnSubmitQuote" onclick="submitQuote()">Request Quote</button>
+        <button onclick="downloadCustomizeInvoice()" style="display:block;width:100%;padding:12px;margin-top:10px;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;border:1px solid var(--border);text-align:center;background:transparent;color:var(--text-secondary);transition:all .2s;">&#128196; Download Invoice</button>
+        <div id="quoteMsg" style="text-align:center;font-size:0.85rem;margin-top:10px;display:none;"></div>
+      </div>
+      <div id="quoteSuccess" style="display:none;text-align:center;padding:16px;">
+        <div style="font-size:1.5rem;margin-bottom:8px;">&#10003;</div>
+        <div style="font-weight:700;margin-bottom:4px;">Quote Requested!</div>
+        <div style="color:var(--text-muted);font-size:0.85rem;">We'll get back to you shortly.</div>
+      </div>
+      <a href="pricing.html" class="back-link">&#8592; Change plan</a>
+    </div>
+
+  </div><!-- /summary-panel -->
+
+</div><!-- /customize-layout -->
+
+
+<!-- ===================================================
+     FOOTER
+     =================================================== -->
+<footer>
+  <div class="f-logo"><img class="nav-logo-img" src="logo-dark.png" alt="iConnect" /></div>
+  <p style="display:flex;align-items:center;justify-content:center;gap:8px;">Powered by <img class="technuf-logo-img" src="technuf-logo-dark.png" alt="Technuf" style="height:24px;"></p>
+  <p style="margin-top:8px;">© 2025 iConnect. All rights reserved.</p>
+</footer>
+
+
+<script src="../data/static-config.js"></script>
+<script>
+  // =============================================
+  // PLAN METADATA
+  // Plan key → display name and minute limit.
+  // =============================================
+  // Fallback plan metadata
+  let PLAN_META = {
+    starter:    { name: 'Starter Plan',    minutes: 1_000  },
+    growth:     { name: 'Growth Plan',     minutes: 10_000 },
+    enterprise: { name: 'Enterprise Plan', minutes: 50_000 },
+  };
+
+  // Fallback add-on catalogue
+  let ADDONS = {
+    monthly: [
+      { id: 'crm',             icon: '🔗', name: 'CRM Integration',            desc: 'Auto-sync contacts and call outcomes to HubSpot, Salesforce, or GoHighLevel.', price: 49 },
+      { id: 'analytics',       icon: '📊', name: 'Analytics Dashboard',        desc: 'Real-time call metrics, conversion rates, and agent performance insights.', price: 29 },
+      { id: 'api',             icon: '⚡', name: 'API Access',                 desc: 'Full REST API to integrate iConnect data with your own tools and workflows.', price: 79 },
+      { id: 'priority_support',icon: '🎯', name: 'Priority Support',           desc: 'Jump to the front of the queue with a guaranteed 4-hour response SLA.', price: 39 },
+      { id: 'account_manager', icon: '👤', name: 'Dedicated Account Manager',  desc: 'A certified success manager to review campaigns and optimize strategy monthly.', price: 199 },
+    ],
+    oneTime: [
+      { id: 'voice_setup',       icon: '🎙️', name: 'Custom Voice & Script Setup', desc: 'Professional voice selection and script writing by our AI content specialists.', price: 299 },
+      { id: 'white_label',       icon: '🏷️', name: 'White-Label Branding',        desc: 'Remove iConnect branding and deploy under your own brand identity.', price: 499 },
+      { id: 'onboarding',        icon: '🚀', name: 'Dedicated Onboarding Session', desc: 'Live 1-on-1 onboarding call with a certified implementation engineer.', price: 399 },
+      { id: 'custom_integration', icon: '🛠️', name: 'Custom Integration Build',   desc: 'We build a custom integration with any tool in your tech stack — any API.', price: 699 },
+    ],
+  };
+
+  // Fetch config from API and override defaults
+  async function fetchConfig() {
+    try {
+      const rawConfig = await loadStaticConfig();
+      const cfg = computePublicPricing(rawConfig);
+
+      // Update plan metadata from server
+      if (cfg.plans) {
+        PLAN_META = {};
+        cfg.plans.forEach(p => {
+          PLAN_META[p.key] = { name: p.name + ' Plan', minutes: p.minutes };
+        });
+      }
+
+      // Update add-ons from server
+      if (cfg.addOns) {
+        ADDONS.monthly = cfg.addOns.monthly.map(a => ({
+          id: a.id, icon: a.icon || '⚡', name: a.name, desc: a.desc || '', price: a.price
+        }));
+        ADDONS.oneTime = cfg.addOns.oneTime.map(a => ({
+          id: a.id, icon: a.icon || '⚡', name: a.name, desc: a.desc || '', price: a.price
+        }));
+      }
+    } catch (e) {
+      console.warn('Using hardcoded defaults — API not available:', e.message);
+    }
+  }
+
+  // =============================================
+  // APP STATE
+  // Populated from URL params on init.
+  // =============================================
+  const state = {
+    planKey:         'growth',
+    planName:        'Growth Plan',
+    minutes:         10_000,
+    basePrice:       0,
+    setupFee:        0,
+    overage:         0,
+    selectedMonthly: new Set(),
+    selectedOneTime: new Set(),
+  };
+
+  // =============================================
+  // INIT — parse URL, populate header, render cards
+  // =============================================
+  function init() {
+    const params  = new URLSearchParams(window.location.search);
+    const planKey = params.get('plan') || 'growth';
+    const meta    = PLAN_META[planKey] || PLAN_META.growth;
+
+    // Write state from URL params
+    state.planKey   = planKey;
+    state.planName  = meta.name;
+    state.minutes   = meta.minutes;
+    state.basePrice = parseFloat(params.get('price'))   || 0;
+    state.setupFee  = parseFloat(params.get('setup'))   || 499;
+
+    // Carrier params (passed from pricing page)
+    state.carrierEnabled = params.get('carrier') === '1';
+    state.carrierMonthly = parseFloat(params.get('carrierMonthly')) || 0;
+    state.carrierSetup   = parseFloat(params.get('carrierSetup')) || 0;
+    state.carrierName    = params.get('carrierName') || '';
+    state.numberType     = params.get('numberType') || '';
+    state.phoneCount     = parseInt(params.get('phoneCount')) || 0;
+    state.inboundMin     = parseInt(params.get('inboundMin')) || 0;
+    state.outboundMin    = parseInt(params.get('outboundMin')) || 0;
+    state.overage   = parseFloat(params.get('overage')) || 0;
+
+    // Update page title + breadcrumb
+    document.title = `iConnect – Customize ${meta.name}`;
+    document.getElementById('crumbPlan').textContent    = meta.name;
+    document.getElementById('summaryName').textContent  = meta.name;
+
+    // Populate banner
+    document.getElementById('bannerName').textContent    = meta.name;
+    document.getElementById('bannerMinutes').textContent = meta.minutes.toLocaleString();
+    document.getElementById('bannerPrice').textContent   = '$' + Math.round(state.basePrice).toLocaleString('en-US');
+    document.getElementById('bannerOverage').textContent = state.overage > 0
+      ? `$${state.overage.toFixed(3)}/min overage`
+      : 'No overage charges';
+
+    // Render add-on cards
+    renderCards('monthlyAddonCards', ADDONS.monthly,  'monthly');
+    renderCards('oneTimeAddonCards',  ADDONS.oneTime,  'oneTime');
+
+    const addonsParam = params.get('addons');
+    if (addonsParam) {
+      const preselected = addonsParam.split(',').map(s => s.trim()).filter(Boolean);
+      const monthlyIds = new Set(ADDONS.monthly.map(a => a.id));
+      const oneTimeIds = new Set(ADDONS.oneTime.map(a => a.id));
+      for (const id of preselected) {
+        if (monthlyIds.has(id)) {
+          state.selectedMonthly.add(id);
+          const card = document.getElementById('card-' + id);
+          if (card) card.classList.add('selected');
+        } else if (oneTimeIds.has(id)) {
+          state.selectedOneTime.add(id);
+          const card = document.getElementById('card-' + id);
+          if (card) card.classList.add('selected');
+        }
+      }
+    }
+
+    // First pass of summary
+    updateSummary();
+  }
+
+  // =============================================
+  // RENDER ADD-ON CARDS
+  // Builds HTML for a list of add-ons and injects
+  // it into the given container element.
+  // =============================================
+  function renderCards(containerId, addons, type) {
+    const period = type === 'monthly' ? '/mo' : ' one-time';
+    document.getElementById(containerId).innerHTML = addons.map(a => `
+      <div class="addon-card" id="card-${a.id}" onclick="toggleAddon('${a.id}', '${type}')">
+        <div class="addon-icon">${a.icon}</div>
+        <div class="addon-body">
+          <div class="addon-name">${a.name}</div>
+          <div class="addon-desc">${a.desc}</div>
+        </div>
+        <div class="addon-right">
+          <div class="addon-price-wrap">
+            <span class="addon-price">$${a.price.toLocaleString()}</span>
+            <span class="addon-price-period">${period}</span>
+          </div>
+          <div class="toggle-pill"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // =============================================
+  // TOGGLE ADD-ON
+  // Flips the selected state on a card and
+  // immediately refreshes the summary panel.
+  // =============================================
+  function toggleAddon(id, type) {
+    const set = type === 'monthly' ? state.selectedMonthly : state.selectedOneTime;
+
+    if (set.has(id)) {
+      set.delete(id);
+      document.getElementById(`card-${id}`).classList.remove('selected');
+    } else {
+      set.add(id);
+      document.getElementById(`card-${id}`).classList.add('selected');
+    }
+
+    updateSummary();
+  }
+
+  // =============================================
+  // UPDATE SUMMARY PANEL
+  //
+  // Called every time a toggle changes.
+  // Recalculates all totals and re-renders the
+  // add-on rows inside the summary panel.
+  //
+  // Formulas:
+  //   monthlyTotal = basePrice + Σ selected monthly add-ons
+  //   oneTimeTotal = setupFee  + Σ selected one-time add-ons
+  //   costPerMin   = monthlyTotal ÷ includedMinutes
+  // =============================================
+  function updateSummary() {
+    // — Tally monthly add-ons
+    let monthlyExtra = 0;
+    const monthlyRows = [];
+    for (const addon of ADDONS.monthly) {
+      if (state.selectedMonthly.has(addon.id)) {
+        monthlyExtra += addon.price;
+        monthlyRows.push(addon);
+      }
+    }
+
+    // — Tally one-time add-ons
+    let oneTimeExtra = 0;
+    const oneTimeRows = [];
+    for (const addon of ADDONS.oneTime) {
+      if (state.selectedOneTime.has(addon.id)) {
+        oneTimeExtra += addon.price;
+        oneTimeRows.push(addon);
+      }
+    }
+
+    // — Derived totals
+    const monthlyTotal = state.basePrice + monthlyExtra;
+    const oneTimeTotal = state.setupFee  + oneTimeExtra;
+    const cpm          = state.minutes > 0 ? monthlyTotal / state.minutes : 0;
+
+    // — Write static values
+    const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
+    document.getElementById('sumBase').textContent         = fmt(state.basePrice);
+    document.getElementById('sumSetup').textContent        = fmt(state.setupFee);
+    document.getElementById('sumMonthlyTotal').textContent = fmt(monthlyTotal);
+    document.getElementById('sumOneTimeTotal').textContent = fmt(oneTimeTotal);
+    document.getElementById('sumCPM').textContent          = '$' + cpm.toFixed(4) + '/min';
+
+    // — Inject monthly add-on rows
+    document.getElementById('sumMonthlyRows').innerHTML = monthlyRows.length
+      ? monthlyRows.map(a => `
+          <div class="sum-row sum-addon">
+            <span class="sum-row-name">${a.name}</span>
+            <span class="sum-row-val">$${a.price}/mo</span>
+          </div>`).join('')
+      : '<div class="sum-empty">No monthly add-ons selected</div>';
+
+    // — Inject one-time add-on rows
+    document.getElementById('sumOneTimeRows').innerHTML = oneTimeRows.length
+      ? oneTimeRows.map(a => `
+          <div class="sum-row sum-addon">
+            <span class="sum-row-name">${a.name}</span>
+            <span class="sum-row-val">$${a.price.toLocaleString()}</span>
+          </div>`).join('')
+      : '<div class="sum-empty">No one-time services selected</div>';
+
+    // — Carrier
+    const carrierMonthly = state.carrierEnabled ? state.carrierMonthly : 0;
+    const carrierSetup   = state.carrierEnabled ? state.carrierSetup : 0;
+
+    if (state.carrierEnabled) {
+      document.getElementById('sumCarrierGroup').style.display = 'block';
+      document.getElementById('sumCarrierLabel').textContent = state.carrierName + ' — ' + state.numberType;
+      document.getElementById('sumCarrierMonthly').textContent = '$' + carrierMonthly.toFixed(2) + '/mo';
+      if (carrierSetup > 0) {
+        document.getElementById('sumCarrierSetupRow').style.display = 'flex';
+        document.getElementById('sumCarrierSetup').textContent = fmt(carrierSetup);
+      }
+    } else {
+      document.getElementById('sumCarrierGroup').style.display = 'none';
+    }
+
+    // — Grand total breakdown
+    document.getElementById('sumGrandBase').textContent = fmt(state.basePrice) + '/mo';
+    var addonMoRow = document.getElementById('sumGrandAddonsRow');
+    if (monthlyExtra > 0) { addonMoRow.style.display = 'flex'; document.getElementById('sumGrandAddons').textContent = fmt(monthlyExtra) + '/mo'; }
+    else { addonMoRow.style.display = 'none'; }
+    var carrierRow = document.getElementById('sumGrandCarrierRow');
+    if (carrierMonthly > 0) { carrierRow.style.display = 'flex'; document.getElementById('sumGrandCarrier').textContent = '$' + carrierMonthly.toFixed(2) + '/mo'; }
+    else { carrierRow.style.display = 'none'; }
+    document.getElementById('sumGrandMonthly').textContent = fmt(monthlyTotal + carrierMonthly);
+    document.getElementById('sumGrandOneTime').textContent = fmt(oneTimeTotal + carrierSetup);
+    var includes = ['Plan'];
+    if (monthlyExtra > 0) includes.push('Add-Ons');
+    if (carrierMonthly > 0) includes.push('Phone Carrier');
+    document.getElementById('sumGrandIncludes').textContent = 'Includes: ' + includes.join(' + ');
+  }
+
+  // =============================================
+  // DOWNLOAD INVOICE (PDF)
+  // =============================================
+  function downloadCustomizeInvoice() {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF();
+    var pageWidth = doc.internal.pageSize.getWidth();
+    var y = 20;
+
+    // Title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('iConnect Invoice', pageWidth / 2, y, { align: 'center' });
+    y += 10;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Generated: ' + new Date().toLocaleDateString(), pageWidth / 2, y, { align: 'center' });
+    y += 14;
+
+    // Plan details
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Plan Details', 14, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Plan: ' + state.planName, 14, y); y += 6;
+    doc.text('Included Minutes: ' + state.minutes.toLocaleString(), 14, y); y += 6;
+    doc.text('Base Monthly Price: $' + Math.round(state.basePrice).toLocaleString(), 14, y); y += 6;
+    doc.text('Setup Fee: $' + Math.round(state.setupFee).toLocaleString(), 14, y); y += 6;
+    if (state.overage > 0) {
+      doc.text('Overage Rate: $' + state.overage.toFixed(3) + '/min', 14, y); y += 6;
+    }
+    y += 6;
+
+    // Selected Add-Ons table
+    var selectedAddons = [];
+    ADDONS.monthly.forEach(function(a) {
+      if (state.selectedMonthly.has(a.id)) {
+        selectedAddons.push([a.name, 'Monthly', '$' + a.price.toLocaleString() + '/mo', a.desc]);
+      }
+    });
+    ADDONS.oneTime.forEach(function(a) {
+      if (state.selectedOneTime.has(a.id)) {
+        selectedAddons.push([a.name, 'One-Time', '$' + a.price.toLocaleString(), a.desc]);
+      }
+    });
+
+    if (selectedAddons.length > 0) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Selected Add-Ons', 14, y);
+      y += 2;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Name', 'Type', 'Price', 'Description']],
+        body: selectedAddons,
+        theme: 'grid',
+        headStyles: { fillColor: [124, 92, 252], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 9, cellPadding: 4 },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 28 },
+          3: { cellWidth: 'auto' }
+        },
+        margin: { left: 14, right: 14 }
+      });
+      y = doc.lastAutoTable.finalY + 10;
+    } else {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
+      doc.text('No add-ons selected.', 14, y);
+      y += 10;
+    }
+
+    // Carrier section
+    if (state.carrierEnabled) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Phone Carrier', 14, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Carrier: ' + state.carrierName + ' — ' + state.numberType, 14, y); y += 6;
+      doc.text('Phone Numbers: ' + state.phoneCount, 14, y); y += 6;
+      doc.text('Carrier Monthly: $' + state.carrierMonthly.toFixed(2) + '/mo', 14, y); y += 6;
+      if (state.carrierSetup > 0) {
+        doc.text('Carrier Setup: $' + Math.round(state.carrierSetup).toLocaleString(), 14, y); y += 6;
+      }
+      y += 6;
+    }
+
+    // Grand Total
+    var monthlyExtra = 0;
+    ADDONS.monthly.forEach(function(a) { if (state.selectedMonthly.has(a.id)) monthlyExtra += a.price; });
+    var oneTimeExtra = 0;
+    ADDONS.oneTime.forEach(function(a) { if (state.selectedOneTime.has(a.id)) oneTimeExtra += a.price; });
+    var carrierMo = state.carrierEnabled ? state.carrierMonthly : 0;
+    var carrierSu = state.carrierEnabled ? state.carrierSetup : 0;
+    var grandMonthly = state.basePrice + monthlyExtra + carrierMo;
+    var grandOneTime = state.setupFee + oneTimeExtra + carrierSu;
+
+    doc.setDrawColor(124, 92, 252);
+    doc.setLineWidth(0.5);
+    doc.line(14, y, pageWidth - 14, y);
+    y += 8;
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Grand Total', 14, y);
+    y += 8;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Base Package: $' + Math.round(state.basePrice).toLocaleString() + '/mo', 14, y); y += 6;
+    if (monthlyExtra > 0) {
+      doc.text('+ Add-Ons: $' + Math.round(monthlyExtra).toLocaleString() + '/mo', 14, y); y += 6;
+    }
+    if (carrierMo > 0) {
+      doc.text('+ Phone Carrier: $' + carrierMo.toFixed(2) + '/mo', 14, y); y += 6;
+    }
+    y += 2;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Monthly Total: $' + Math.round(grandMonthly).toLocaleString(), 14, y); y += 7;
+    doc.text('One-Time Total: $' + Math.round(grandOneTime).toLocaleString(), 14, y); y += 10;
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(130);
+    doc.text('Powered by Technuf — iConnect AI Voice Platform', pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+
+    doc.save('iConnect-Invoice-' + state.planKey + '.pdf');
+  }
+
+  // =============================================
+  // DARK / LIGHT TOGGLE
+  // =============================================
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') !== 'light';
+    const newTheme = isDark ? 'light' : 'dark';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    applyThemeAssets(newTheme);
+  }
+
+  function applyThemeAssets(theme) {
+    const isDark = theme === 'dark';
+    document.querySelectorAll('.nav-logo-img').forEach(img => {
+      img.src = isDark ? 'logo-dark.png' : 'logo-light.png';
+    });
+    document.querySelectorAll('.technuf-logo-img').forEach(img => {
+      img.src = isDark ? 'technuf-logo-dark.png' : 'technuf-logo-light.jpg';
+    });
+    document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon) favicon.href = isDark ? 'icon-dark.png' : 'icon-light.png';
+  }
+
+  // ── Submit Quote Request ──
+  async function submitQuote() {
+    const name = document.getElementById('quoteName').value.trim();
+    const email = document.getElementById('quoteEmail').value.trim();
+    const company = document.getElementById('quoteCompany').value.trim();
+    const msgEl = document.getElementById('quoteMsg');
+
+    if (!name || !email) {
+      msgEl.textContent = 'Please enter your name and email.';
+      msgEl.style.color = 'var(--warning)';
+      msgEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('btnSubmitQuote');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    // Gather add-ons
+    const monthlyAddOns = ADDONS.monthly.filter(a => state.selectedMonthly.has(a.id)).map(a => ({ id: a.id, name: a.name, price: a.price, type: 'monthly' }));
+    const oneTimeAddOns = ADDONS.oneTime.filter(a => state.selectedOneTime.has(a.id)).map(a => ({ id: a.id, name: a.name, price: a.price, type: 'one-time' }));
+    const monthlyExtra = monthlyAddOns.reduce((s, a) => s + a.price, 0);
+    const oneTimeExtra = oneTimeAddOns.reduce((s, a) => s + a.price, 0);
+
+    try {
+      saveQuote({
+          clientName: name, clientEmail: email, clientCompany: company,
+          planKey: state.planKey, planName: state.planName, planMinutes: state.minutes,
+          monthlyPrice: state.basePrice, setupFee: state.setupFee, overageRate: state.overage,
+          monthlyAddOns, oneTimeAddOns,
+          carrier: state.carrierEnabled ? {
+            enabled: true, carrierName: state.carrierName, numberType: state.numberType,
+            phoneCount: state.phoneCount, inboundMinutes: state.inboundMin,
+            outboundMinutes: state.outboundMin, carrierMonthly: state.carrierMonthly, carrierOneTime: state.carrierSetup
+          } : { enabled: false },
+          monthlyTotal: state.basePrice + monthlyExtra + (state.carrierEnabled ? state.carrierMonthly : 0),
+          oneTimeTotal: state.setupFee + oneTimeExtra + (state.carrierEnabled ? state.carrierSetup : 0),
+        });
+
+      document.getElementById('quoteForm').style.display = 'none';
+      document.getElementById('quoteSuccess').style.display = 'block';
+    } catch (err) {
+      msgEl.textContent = 'Something went wrong. Please try again.';
+      msgEl.style.color = 'var(--warning)';
+      msgEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Request Quote';
+    }
+  }
+
+  (async function() {
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    applyThemeAssets(saved);
+    await fetchConfig();
+    init();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,2536 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iConnect – AI Calling Agent Quotation Tool</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    /* =============================================
+       CSS VARIABLES — edit here to retheme easily
+       ============================================= */
+    :root {
+      --bg-primary:    #08080f;
+      --bg-secondary:  #0f0f1a;
+      --bg-card:       #13131e;
+      --bg-card-hover: #1a1a28;
+      --border:        #252538;
+      --border-light:  #35355a;
+      --text-primary:  #eeeeff;
+      --text-secondary:#9898bb;
+      --text-muted:    #555570;
+      --accent:        #7c5cfc;
+      --accent-light:  #a07fff;
+      --accent-glow:   rgba(124,92,252,0.25);
+      --accent2:       #00d4ff;
+      --success:       #22e87a;
+      --warning:       #ffb400;
+      --gradient:      linear-gradient(135deg, #7c5cfc 0%, #00d4ff 100%);
+      --shadow-sm:     0 2px 10px rgba(0,0,0,0.35);
+      --shadow-md:     0 8px 36px rgba(0,0,0,0.45);
+      --shadow-lg:     0 24px 64px rgba(0,0,0,0.6);
+      --r-sm: 8px;
+      --r-md: 16px;
+      --r-lg: 24px;
+      --ease: 0.28s ease;
+    }
+
+    [data-theme="light"] {
+      --bg-primary:    #f4f4fc;
+      --bg-secondary:  #eaeaf5;
+      --bg-card:       #ffffff;
+      --bg-card-hover: #f8f8ff;
+      --border:        #dcdcf0;
+      --border-light:  #c8c8e8;
+      --text-primary:  #0a0a1e;
+      --text-secondary:#404060;
+      --text-muted:    #8080a0;
+      --accent:        #6644f0;
+      --accent-light:  #8060ff;
+      --accent-glow:   rgba(102,68,240,0.14);
+      --shadow-sm:     0 2px 10px rgba(80,60,180,0.10);
+      --shadow-md:     0 8px 36px rgba(80,60,180,0.14);
+      --shadow-lg:     0 24px 64px rgba(80,60,180,0.18);
+    }
+
+    /* =============================================
+       RESET & BASE
+       ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.65;
+      transition: background var(--ease), color var(--ease);
+    }
+
+    /* =============================================
+       NAV
+       ============================================= */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(8,8,15,0.85);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: background var(--ease);
+    }
+
+    [data-theme="light"] nav { background: rgba(244,244,252,0.88); }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+    }
+    .nav-logo img {
+      height: 44px;
+      width: auto;
+      display: block;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+
+    /* Theme toggle */
+    .theme-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border-light);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--ease);
+    }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+
+    /* Generic buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px;
+      border-radius: var(--r-sm);
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all var(--ease);
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--gradient);
+      color: #fff;
+      box-shadow: 0 4px 22px var(--accent-glow);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--accent-glow); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border-light);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-lg { padding: 14px 32px; font-size: 1rem; border-radius: var(--r-md); }
+
+    /* =============================================
+       HERO
+       ============================================= */
+    .hero {
+      text-align: center;
+      padding: 100px 24px 72px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(124,92,252,0.45);
+      color: var(--accent-light);
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4.4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      margin-bottom: 22px;
+    }
+
+    .grad { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      max-width: 580px;
+      margin: 0 auto 40px;
+    }
+
+    .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+    /* =============================================
+       STATS STRIP
+       ============================================= */
+    .stats-strip {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      padding: 28px 24px;
+    }
+
+    .stats-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+      gap: 20px;
+      text-align: center;
+    }
+
+    .stat h3 {
+      font-size: 2rem; font-weight: 900;
+      background: var(--gradient);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .stat p { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
+
+    /* =============================================
+       SECTION SCAFFOLDING
+       ============================================= */
+    .section { padding: 84px 24px; }
+    .section-alt { background: var(--bg-secondary); }
+
+    .section-head { text-align: center; max-width: 680px; margin: 0 auto 60px; }
+    .section-label {
+      font-size: 0.75rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 12px;
+    }
+    .section-head h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900; letter-spacing: -0.5px; margin-bottom: 14px;
+    }
+    .section-head p { color: var(--text-secondary); font-size: 1.05rem; }
+
+    /* =============================================
+       WHY ICONNECT — FEATURE CARDS
+       ============================================= */
+    .features-grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px,1fr));
+      gap: 22px;
+    }
+
+    .feat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 32px;
+      transition: all var(--ease);
+    }
+    .feat-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 32px var(--accent-glow);
+      transform: translateY(-4px);
+    }
+    .feat-icon {
+      width: 52px; height: 52px;
+      background: var(--accent-glow);
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 18px;
+    }
+    .feat-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .feat-card p { color: var(--text-secondary); font-size: 0.93rem; }
+
+    /* =============================================
+       CALCULATOR SECTION
+       ============================================= */
+    .calc-box {
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    .calc-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 40px;
+      margin-bottom: 48px;
+    }
+
+    .calc-panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 32px; flex-wrap: wrap; gap: 14px;
+    }
+    .calc-panel-header h2 { font-size: 1.35rem; font-weight: 800; }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      padding: 8px 20px;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      font-size: 0.88rem; font-weight: 700;
+      transition: all var(--ease);
+    }
+    .btn-reset:hover { border-color: var(--warning); color: var(--warning); }
+
+    .calc-sub-label {
+      font-size: 0.73rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 18px;
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(195px,1fr));
+      gap: 22px;
+    }
+
+    .calc-field { display: flex; flex-direction: column; gap: 5px; }
+
+    .calc-field label {
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .calc-field input {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 11px 14px;
+      color: var(--text-primary);
+      font-size: 0.97rem; font-weight: 700;
+      transition: all var(--ease);
+      width: 100%;
+    }
+    .calc-field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .calc-field .hint { font-size: 0.75rem; color: var(--text-muted); }
+    /* =============================================
+       FIXED COST DISPLAY — Technuf wholesale section
+       ============================================= */
+    .calc-sub-note {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .calc-sub-note strong { color: var(--accent-light); }
+
+    .fixed-costs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .fixed-cost-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 18px 20px;
+      transition: border-color var(--ease);
+    }
+    .fixed-cost-card:hover { border-color: var(--border-light); }
+    .fixed-cost-card.fc-featured-card {
+      border-color: rgba(124,92,252,0.4);
+      background: rgba(124,92,252,0.05);
+    }
+
+    .fc-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .fc-plan {
+      font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .fc-mins { font-size: 0.74rem; color: var(--text-muted); }
+
+    .fc-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 4px 0;
+      font-size: 0.81rem;
+    }
+    .fc-lbl { color: var(--text-muted); }
+    .fc-val {
+      font-weight: 700;
+      font-family: 'Courier New', Courier, monospace;
+      color: var(--text-secondary);
+    }
+    .fc-val.fc-hi { color: var(--accent-light); }
+
+    .fc-row.fc-total {
+      border-top: 1px solid var(--border);
+      margin-top: 8px; padding-top: 9px;
+    }
+    .fc-row.fc-total .fc-val { font-size: 0.88rem; }
+
+    .calc-divider { height: 1px; background: var(--border); margin: 30px 0; }
+
+    /* =============================================
+       PRICING CARDS
+       ============================================= */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px,1fr));
+      gap: 24px;
+    }
+
+    .pricing-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 36px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: all var(--ease);
+    }
+    .pricing-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+
+    /* Featured / Growth */
+    .pricing-card.featured {
+      border-color: var(--accent);
+      box-shadow: 0 0 44px var(--accent-glow);
+    }
+    .pricing-card.featured::after {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gradient);
+    }
+
+    .popular-badge {
+      position: absolute; top: 20px; right: 20px;
+      background: var(--gradient);
+      color: #fff;
+      font-size: 0.72rem; font-weight: 800;
+      padding: 4px 12px; border-radius: 100px;
+      letter-spacing: 0.04em;
+    }
+
+    .plan-tier {
+      font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 6px;
+    }
+    .plan-mins { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 22px; }
+
+    .plan-price-row { margin-bottom: 6px; }
+    .plan-price-row .sym { font-size: 1.3rem; font-weight: 800; vertical-align: top; margin-top: 10px; display: inline-block; }
+    .plan-price-row .num { font-size: 3.2rem; font-weight: 900; line-height: 1; }
+    .plan-price-row .per { font-size: 0.88rem; color: var(--text-secondary); }
+
+    .plan-setup { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 22px; min-height: 18px; }
+
+    /* Metrics strip */
+    .plan-metrics {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: var(--bg-secondary);
+      border-radius: var(--r-sm);
+      padding: 14px;
+      margin-bottom: 26px;
+    }
+    .metric { text-align: center; }
+    .metric-val { font-size: 1.05rem; font-weight: 800; color: var(--success); }
+    .metric-lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* Feature list */
+    .plan-feats { list-style: none; margin-bottom: 30px; }
+    .plan-feats li {
+      display: flex; align-items: flex-start; gap: 9px;
+      padding: 7px 0;
+      font-size: 0.92rem; color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .plan-feats li:last-child { border-bottom: none; }
+    .plan-feats li::before { content: '✓'; color: var(--success); font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+
+    /* CTA buttons inside cards */
+    .card-cta {
+      width: 100%; padding: 13px;
+      border-radius: var(--r-sm);
+      font-size: 0.97rem; font-weight: 800;
+      cursor: pointer; transition: all var(--ease); border: none;
+    }
+    .cta-outline {
+      background: transparent;
+      border: 2px solid var(--border-light);
+      color: var(--text-primary);
+    }
+    .cta-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .cta-grad {
+      background: var(--gradient);
+      color: #fff;
+      box-shadow: 0 4px 22px var(--accent-glow);
+    }
+    .cta-grad:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--accent-glow); }
+
+    .overage-tag {
+      font-size: 0.77rem; color: var(--text-muted);
+      text-align: center; margin-top: 10px; min-height: 16px;
+    }
+
+    /* =============================================
+       CALCULATION BREAKDOWN
+       ============================================= */
+    .breakdown-grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px,1fr));
+      gap: 24px;
+    }
+
+    .bd-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      transition: all var(--ease);
+    }
+    .bd-card:hover { box-shadow: var(--shadow-md); }
+    .bd-card.bd-featured { border-color: var(--accent); box-shadow: 0 0 30px var(--accent-glow); }
+
+    .bd-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+    .bd-plan-name {
+      font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .bd-plan-mins {
+      font-size: 0.78rem; color: var(--text-muted); font-weight: 600;
+    }
+
+    .bd-steps { padding: 6px 0; }
+
+    .bd-step {
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .bd-step:last-child { border-bottom: none; }
+
+    .bd-step-label {
+      font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .bd-step-label .step-num {
+      width: 18px; height: 18px;
+      background: var(--accent-glow);
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 900; color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* Abstract formula (always shown in muted style) */
+    .bd-formula-abstract {
+      font-size: 0.78rem; color: var(--text-muted);
+      font-family: 'Courier New', Courier, monospace;
+      margin-bottom: 5px;
+    }
+
+    /* Live formula with real numbers */
+    .bd-formula-live {
+      font-size: 0.88rem; font-weight: 700;
+      font-family: 'Courier New', Courier, monospace;
+      color: var(--text-secondary);
+      word-break: break-all;
+    }
+    .bd-formula-live .bd-result {
+      color: var(--success);
+      font-size: 0.95rem;
+    }
+
+    /* =============================================
+       ANNUAL PRICING SECTION
+       ============================================= */
+    .annual-divider {
+      max-width: 1100px; margin: 48px auto 0;
+      text-align: center;
+    }
+    .annual-divider .section-label { margin-bottom: 6px; }
+    .annual-divider h3 {
+      font-size: 1.35rem; font-weight: 800; letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+    .annual-divider p { font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 28px; }
+
+    .annual-equiv {
+      font-size: 0.88rem; color: var(--text-secondary);
+      margin-bottom: 18px; min-height: 18px;
+    }
+    .annual-equiv strong { color: var(--text-primary); }
+
+    .annual-badge {
+      position: absolute; top: 20px; right: 20px;
+      background: linear-gradient(135deg, var(--success), #00c060);
+      color: #fff;
+      font-size: 0.7rem; font-weight: 800;
+      padding: 4px 12px; border-radius: 100px;
+      letter-spacing: 0.04em;
+    }
+
+    /* =============================================
+       COMPARISON TABLE
+       ============================================= */
+    .table-wrap { max-width: 980px; margin: 0 auto; overflow-x: auto; }
+
+    .comp-table {
+      width: 100%; border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .comp-table th {
+      padding: 18px 22px;
+      background: var(--bg-secondary);
+      font-size: 0.9rem; font-weight: 800;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .comp-table th:first-child { text-align: left; }
+    .comp-table th.feat-col { background: var(--accent-glow); color: var(--accent-light); border-bottom-color: var(--accent); }
+
+    .comp-table td {
+      padding: 14px 22px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem; color: var(--text-secondary);
+    }
+    .comp-table td:first-child { text-align: left; font-weight: 600; color: var(--text-primary); }
+    .comp-table td.feat-col { background: rgba(124,92,252,0.04); }
+    .comp-table tr:last-child td { border-bottom: none; }
+    .comp-table tr:hover td { background: var(--bg-secondary); }
+    .comp-table tr:hover td.feat-col { background: rgba(124,92,252,0.09); }
+
+    .chk { color: var(--success); font-size: 1.05rem; font-weight: 800; }
+    .crs { color: var(--text-muted); }
+
+    /* =============================================
+       FOOTER
+       ============================================= */
+    footer {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+    }
+    footer .f-logo { margin-bottom: 10px; }
+    footer .f-logo img { height: 40px; width: auto; display: block; margin: 0 auto; }
+    footer p { color: var(--text-muted); font-size: 0.88rem; }
+
+    /* =============================================
+       CLIENT DETAILS SECTION
+       ============================================= */
+    .client-panel {
+      max-width: 1100px; margin: 0 auto 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 40px;
+    }
+    .client-panel h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 28px; }
+    .client-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 22px;
+    }
+    .client-field { display: flex; flex-direction: column; gap: 5px; }
+    .client-field label {
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    .client-field input,
+    .client-field textarea {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 11px 14px;
+      color: var(--text-primary);
+      font-size: 0.97rem; font-weight: 600;
+      font-family: inherit;
+      transition: all var(--ease);
+      width: 100%;
+    }
+    .client-field input:focus,
+    .client-field textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .client-field textarea { resize: vertical; min-height: 72px; }
+    .client-field-full { grid-column: 1 / -1; }
+
+    /* =============================================
+       PROFIT HIGHLIGHT REDESIGN
+       ============================================= */
+    .plan-profit-highlight {
+      background: linear-gradient(135deg, rgba(34,232,122,0.10) 0%, rgba(0,212,255,0.08) 100%);
+      border: 1px solid rgba(34,232,122,0.25);
+      border-radius: var(--r-md);
+      padding: 18px 14px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      text-align: center;
+    }
+    .profit-stat { padding: 8px 4px; }
+    .profit-stat-val {
+      font-size: 1.7rem; font-weight: 900;
+      color: var(--success);
+      line-height: 1.15;
+    }
+    .profit-stat-val.profit-pct {
+      background: linear-gradient(135deg, #22e87a, #00d4ff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .profit-stat-lbl {
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .plan-metrics-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: var(--bg-secondary);
+      border-radius: var(--r-sm);
+      padding: 14px;
+      margin-bottom: 26px;
+    }
+
+    /* =============================================
+       EXPORT SECTION
+       ============================================= */
+    .export-panel {
+      max-width: 1100px; margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 40px;
+      text-align: center;
+    }
+    .export-panel h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; }
+    .export-panel p { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 28px; }
+    .export-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .export-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 32px;
+      border-radius: var(--r-sm);
+      font-size: 0.95rem; font-weight: 800;
+      cursor: pointer; border: none;
+      transition: all var(--ease);
+      color: #fff;
+    }
+    .export-btn:hover { transform: translateY(-2px); }
+    .export-btn-pdf { background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 18px rgba(231,76,60,0.3); }
+    .export-btn-pdf:hover { box-shadow: 0 8px 28px rgba(231,76,60,0.4); }
+    .export-btn-xlsx { background: linear-gradient(135deg, #27ae60, #1e8449); box-shadow: 0 4px 18px rgba(39,174,96,0.3); }
+    .export-btn-xlsx:hover { box-shadow: 0 8px 28px rgba(39,174,96,0.4); }
+    .export-btn-doc { background: linear-gradient(135deg, #2980b9, #1a5276); box-shadow: 0 4px 18px rgba(41,128,185,0.3); }
+    .export-btn-doc:hover { box-shadow: 0 8px 28px rgba(41,128,185,0.4); }
+
+    /* =============================================
+       ANIMATIONS
+       ============================================= */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .pricing-card { animation: fadeUp 0.5s ease both; }
+    .pricing-card:nth-child(1) { animation-delay: 0.07s; }
+    .pricing-card:nth-child(2) { animation-delay: 0.16s; }
+    .pricing-card:nth-child(3) { animation-delay: 0.25s; }
+
+    @keyframes numFlash {
+      0%   { opacity: 1; }
+      40%  { opacity: 0.35; color: var(--accent); }
+      100% { opacity: 1; }
+    }
+    .flash { animation: numFlash 0.38s ease; }
+
+    /* =============================================
+       RESPONSIVE
+       ============================================= */
+    @media (max-width: 640px) {
+      nav { padding: 12px 18px; }
+      .hero { padding: 60px 16px 48px; }
+      .calc-panel { padding: 24px 18px; }
+      .pricing-card { padding: 28px 22px; }
+      .plan-price-row .num { font-size: 2.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================================================
+     NAVIGATION
+     =================================================== -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <img src="iconnect-logo.png" alt="iConnect" />
+  </a>
+  <div class="nav-right">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    <a href="#pricing" class="btn btn-ghost">View Plans</a>
+    <a href="#calculator" class="btn btn-primary">Get Started</a>
+  </div>
+</nav>
+
+
+<!-- ===================================================
+     HERO
+     =================================================== -->
+<section class="hero">
+  <div class="hero-badge">⚡ Powered by Technuf</div>
+  <h1>
+    AI Calling Agents That<br>
+    <span class="grad">Close Deals While You Sleep</span>
+  </h1>
+  <p>
+    iConnect gives your business a 24/7 AI phone agent that sounds human,
+    handles objections, books appointments, and updates your CRM — automatically.
+  </p>
+  <div class="hero-cta">
+    <a href="#pricing" class="btn btn-primary btn-lg">🚀 See Pricing</a>
+    <a href="#why" class="btn btn-ghost btn-lg">Learn More →</a>
+  </div>
+</section>
+
+
+<!-- ===================================================
+     STATS STRIP
+     =================================================== -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat"><h3>99.9%</h3><p>Uptime SLA</p></div>
+    <div class="stat"><h3>&lt;500ms</h3><p>Response Latency</p></div>
+    <div class="stat"><h3>50K+</h3><p>Calls Handled / Month</p></div>
+    <div class="stat"><h3>3×</h3><p>More Leads Converted</p></div>
+  </div>
+</div>
+
+
+<!-- ===================================================
+     CLIENT DETAILS
+     =================================================== -->
+<section class="section" id="clientDetails">
+  <div class="section-head">
+    <div class="section-label">Client Quotation</div>
+    <h2>Client Details</h2>
+    <p>Enter client information for the quote. This will appear in all exported documents.</p>
+  </div>
+  <div class="client-panel">
+    <div class="client-grid">
+      <div class="client-field">
+        <label>Client / Company Name</label>
+        <input type="text" id="clientName" placeholder="Acme Corp">
+      </div>
+      <div class="client-field">
+        <label>Contact Person</label>
+        <input type="text" id="contactPerson" placeholder="John Smith">
+      </div>
+      <div class="client-field">
+        <label>Date</label>
+        <input type="date" id="quoteDate">
+      </div>
+      <div class="client-field">
+        <label>Prepared By</label>
+        <input type="text" id="preparedBy" placeholder="Your Name">
+      </div>
+      <div class="client-field client-field-full">
+        <label>Notes</label>
+        <textarea id="quoteNotes" placeholder="Any additional notes for this quote..."></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================================================
+     WHY ICONNECT
+     =================================================== -->
+<section class="section" id="why">
+  <div class="section-head">
+    <div class="section-label">Why iConnect</div>
+    <h2>Built for Businesses That Can't Miss a Call</h2>
+    <p>From solo operators to enterprise teams, iConnect scales your outreach without scaling your headcount.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🧠</div>
+      <h3>Human-Like Conversations</h3>
+      <p>Powered by Technuf — your agent sounds natural, handles interruptions, and adapts in real time.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚙️</div>
+      <h3>Fully Automated Workflows</h3>
+      <p>From call initiation to CRM updates and follow-up emails — every step runs without human intervention.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <h3>Real-Time Analytics</h3>
+      <p>Track call outcomes, conversion rates, agent performance, and ROI from a single live dashboard.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔗</div>
+      <h3>CRM & Tool Integrations</h3>
+      <p>Connects with HubSpot, Salesforce, GoHighLevel, and more. Your data stays in sync, always.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🛡️</div>
+      <h3>Compliance Ready</h3>
+      <p>Built-in DNC list management, recording disclosures, and TCPA compliance controls out of the box.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🚀</div>
+      <h3>Deploy in Hours, Not Weeks</h3>
+      <p>Guided white-label onboarding gets your branded AI agent live within 24 hours of sign-up.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================================================
+     PRICING CALCULATOR + CARDS
+     =================================================== -->
+<section class="section section-alt" id="calculator">
+  <div class="calc-box">
+
+    <div class="section-head">
+      <div class="section-label">Pricing Calculator</div>
+      <h2>Transparent. Flexible. Yours.</h2>
+      <p>Adjust the inputs below — prices update instantly as you type.</p>
+    </div>
+
+    <!-- ——— Input Controls ——— -->
+    <div class="calc-panel">
+      <div class="calc-panel-header">
+        <h2>⚙️ Pricing Configuration</h2>
+        <button class="btn-reset" onclick="resetDefaults()">↺ Reset to Default</button>
+      </div>
+
+      <!-- Global settings row -->
+      <div class="calc-sub-label">Global Settings</div>
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label>Profit Margin %</label>
+          <input type="number" id="profitMargin" value="60" min="0" max="99" step="1">
+          <span class="hint">% of sell price that is profit</span>
+        </div>
+        <div class="calc-field">
+          <label>Overhead %</label>
+          <input type="number" id="overhead" value="15" min="0" max="200" step="1">
+          <span class="hint">Added on top of base cost</span>
+        </div>
+        <div class="calc-field">
+          <label>One-Time Setup Fee ($)</label>
+          <input type="number" id="setupFee" value="499" min="0" step="1">
+          <span class="hint">Charged once at signup</span>
+        </div>
+        <div class="calc-field">
+          <label>Overage Rate ($/min)</label>
+          <input type="number" id="overageRate" value="0.05" min="0" step="0.001">
+          <span class="hint">Per minute beyond plan limit</span>
+        </div>
+        <div class="calc-field">
+          <label>Annual Discount %</label>
+          <input type="number" id="annualDiscount" value="15" min="0" max="99" step="1">
+          <span class="hint">Discount for annual billing</span>
+        </div>
+      </div>
+
+      <div class="calc-divider"></div>
+
+      <!-- Per-plan base costs — FIXED from Technuf enterprise pricing model -->
+      <div class="calc-sub-label">Your Base Costs (Technuf Wholesale)</div>
+      <div class="calc-sub-note">
+        All package costs are derived from the Technuf enterprise rate of <strong>$0.08/min</strong>.
+        Starter carries a <strong>5% premium</strong>, Growth a <strong>2.5% premium</strong>, Enterprise uses the rate directly.
+      </div>
+      <div class="fixed-costs-grid">
+
+        <div class="fixed-cost-card">
+          <div class="fc-header">
+            <span class="fc-plan">Starter</span>
+            <span class="fc-mins">1,000 min / mo</span>
+          </div>
+          <div class="fc-row">
+            <span class="fc-lbl">Rate derivation</span>
+            <span class="fc-val">$0.08 × 1.050</span>
+          </div>
+          <div class="fc-row">
+            <span class="fc-lbl">Technuf CPM</span>
+            <span class="fc-val fc-hi">$0.0840/min</span>
+          </div>
+          <div class="fc-row fc-total">
+            <span class="fc-lbl">Monthly base cost</span>
+            <span class="fc-val fc-hi">$84.00</span>
+          </div>
+        </div>
+
+        <div class="fixed-cost-card fc-featured-card">
+          <div class="fc-header">
+            <span class="fc-plan">Growth</span>
+            <span class="fc-mins">10,000 min / mo</span>
+          </div>
+          <div class="fc-row">
+            <span class="fc-lbl">Rate derivation</span>
+            <span class="fc-val">$0.08 × 1.025</span>
+          </div>
+          <div class="fc-row">
+            <span class="fc-lbl">Technuf CPM</span>
+            <span class="fc-val fc-hi">$0.0820/min</span>
+          </div>
+          <div class="fc-row fc-total">
+            <span class="fc-lbl">Monthly base cost</span>
+            <span class="fc-val fc-hi">$820.00</span>
+          </div>
+        </div>
+
+        <div class="fixed-cost-card">
+          <div class="fc-header">
+            <span class="fc-plan">Enterprise</span>
+            <span class="fc-mins">50,000 min / mo</span>
+          </div>
+          <div class="fc-row">
+            <span class="fc-lbl">Rate derivation</span>
+            <span class="fc-val">$0.08 × 1.000</span>
+          </div>
+          <div class="fc-row">
+            <span class="fc-lbl">Technuf CPM</span>
+            <span class="fc-val fc-hi">$0.0800/min</span>
+          </div>
+          <div class="fc-row fc-total">
+            <span class="fc-lbl">Monthly base cost</span>
+            <span class="fc-val fc-hi">$4,000.00</span>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /calc-panel -->
+
+
+    <!-- ——— Pricing Cards ——— -->
+    <div class="pricing-grid" id="pricing">
+
+      <!-- STARTER -->
+      <div class="pricing-card">
+        <div class="plan-tier">Starter</div>
+        <div class="plan-mins">1,000 minutes / month</div>
+        <div class="plan-price-row">
+          <span class="sym">$</span><span class="num" id="starterPrice">0</span><span class="per"> / mo</span>
+        </div>
+        <div class="plan-setup" id="starterSetup"></div>
+        <div class="plan-profit-highlight">
+          <div class="profit-stat">
+            <div class="profit-stat-val" id="starterProfit">$0</div>
+            <div class="profit-stat-lbl">Monthly Profit</div>
+          </div>
+          <div class="profit-stat">
+            <div class="profit-stat-val profit-pct" id="starterProfitPct">0%</div>
+            <div class="profit-stat-lbl">Profit Margin</div>
+          </div>
+        </div>
+        <div class="plan-metrics-row">
+          <div class="metric">
+            <div class="metric-val" id="starterCPM">$0.0000</div>
+            <div class="metric-lbl">Sell price / min</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="starterElCPM">$0.0000</div>
+            <div class="metric-lbl">Technuf / min</div>
+          </div>
+        </div>
+        <ul class="plan-feats">
+          <li>1 AI Calling Agent</li>
+          <li>Basic Call Routing</li>
+          <li>Call Summaries &amp; Transcripts</li>
+          <li>Email Alerts &amp; Notifications</li>
+          <li>Standard Support (48 h SLA)</li>
+        </ul>
+        <button class="card-cta cta-outline" onclick="goToCustomize('starter')">Get Started</button>
+        <div class="overage-tag" id="starterOverage"></div>
+      </div>
+
+      <!-- GROWTH (FEATURED) -->
+      <div class="pricing-card featured">
+        <span class="popular-badge">Most Popular</span>
+        <div class="plan-tier">Growth</div>
+        <div class="plan-mins">10,000 minutes / month</div>
+        <div class="plan-price-row">
+          <span class="sym">$</span><span class="num" id="growthPrice">0</span><span class="per"> / mo</span>
+        </div>
+        <div class="plan-setup" id="growthSetup"></div>
+        <div class="plan-profit-highlight">
+          <div class="profit-stat">
+            <div class="profit-stat-val" id="growthProfit">$0</div>
+            <div class="profit-stat-lbl">Monthly Profit</div>
+          </div>
+          <div class="profit-stat">
+            <div class="profit-stat-val profit-pct" id="growthProfitPct">0%</div>
+            <div class="profit-stat-lbl">Profit Margin</div>
+          </div>
+        </div>
+        <div class="plan-metrics-row">
+          <div class="metric">
+            <div class="metric-val" id="growthCPM">$0.0000</div>
+            <div class="metric-lbl">Sell price / min</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="growthElCPM">$0.0000</div>
+            <div class="metric-lbl">Technuf / min</div>
+          </div>
+        </div>
+        <ul class="plan-feats">
+          <li>3 AI Calling Agents</li>
+          <li>Advanced Call Routing &amp; IVR</li>
+          <li>CRM Integration (HubSpot, Salesforce)</li>
+          <li>Analytics Dashboard</li>
+          <li>Priority Support (12 h SLA)</li>
+          <li>Custom Voice &amp; Script</li>
+        </ul>
+        <button class="card-cta cta-grad" onclick="goToCustomize('growth')">Get Started</button>
+        <div class="overage-tag" id="growthOverage"></div>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="pricing-card">
+        <div class="plan-tier">Enterprise</div>
+        <div class="plan-mins">50,000 minutes / month</div>
+        <div class="plan-price-row">
+          <span class="sym">$</span><span class="num" id="enterprisePrice">0</span><span class="per"> / mo</span>
+        </div>
+        <div class="plan-setup" id="enterpriseSetup"></div>
+        <div class="plan-profit-highlight">
+          <div class="profit-stat">
+            <div class="profit-stat-val" id="enterpriseProfit">$0</div>
+            <div class="profit-stat-lbl">Monthly Profit</div>
+          </div>
+          <div class="profit-stat">
+            <div class="profit-stat-val profit-pct" id="enterpriseProfitPct">0%</div>
+            <div class="profit-stat-lbl">Profit Margin</div>
+          </div>
+        </div>
+        <div class="plan-metrics-row">
+          <div class="metric">
+            <div class="metric-val" id="enterpriseCPM">$0.0000</div>
+            <div class="metric-lbl">Sell price / min</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="enterpriseElCPM">$0.0000</div>
+            <div class="metric-lbl">Technuf / min</div>
+          </div>
+        </div>
+        <ul class="plan-feats">
+          <li>Unlimited AI Calling Agents</li>
+          <li>Custom Integrations &amp; API Access</li>
+          <li>Dedicated Onboarding Specialist</li>
+          <li>Advanced Reporting &amp; BI Export</li>
+          <li>Dedicated Account Manager</li>
+          <li>White-Label Branding Options</li>
+          <li>4 h SLA &amp; Uptime Guarantee</li>
+        </ul>
+        <button class="card-cta cta-outline" onclick="goToCustomize('enterprise')">Contact Sales</button>
+        <div class="overage-tag" id="enterpriseOverage"></div>
+      </div>
+
+    </div><!-- /pricing-grid -->
+
+
+    <!-- ——— Annual Pricing Cards ——— -->
+    <div class="annual-divider">
+      <div class="section-label">Annual Pricing</div>
+      <h3>Save More with Annual Billing</h3>
+      <p>All plans are available with an annual discount. Billed once per year.</p>
+    </div>
+
+    <div class="pricing-grid" id="annualPricing">
+
+      <!-- STARTER ANNUAL -->
+      <div class="pricing-card">
+        <span class="annual-badge">SAVE <span id="aStarter-discPct">15</span>%</span>
+        <div class="plan-tier">Starter Annual</div>
+        <div class="plan-mins">1,000 minutes / month</div>
+        <div class="plan-price-row">
+          <span class="sym">$</span><span class="num" id="aStarter-price">0</span><span class="per"> / yr</span>
+        </div>
+        <div class="annual-equiv" id="aStarter-equiv">$0 / mo billed annually</div>
+        <div class="plan-profit-highlight">
+          <div class="profit-stat">
+            <div class="profit-stat-val" id="aStarter-profit">$0</div>
+            <div class="profit-stat-lbl">Annual Profit</div>
+          </div>
+          <div class="profit-stat">
+            <div class="profit-stat-val profit-pct" id="aStarter-margin">0%</div>
+            <div class="profit-stat-lbl">Profit Margin</div>
+          </div>
+        </div>
+        <div class="plan-metrics-row">
+          <div class="metric">
+            <div class="metric-val" id="aStarter-savings">$0</div>
+            <div class="metric-lbl">Savings vs monthly</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="aStarter-cpm">$0.0000</div>
+            <div class="metric-lbl">Annual cost / min</div>
+          </div>
+        </div>
+        <button class="card-cta cta-outline" onclick="goToCustomize('starter')">Get Started</button>
+      </div>
+
+      <!-- GROWTH ANNUAL (FEATURED) -->
+      <div class="pricing-card featured">
+        <span class="annual-badge">SAVE <span id="aGrowth-discPct">15</span>%</span>
+        <div class="plan-tier">Growth Annual</div>
+        <div class="plan-mins">10,000 minutes / month</div>
+        <div class="plan-price-row">
+          <span class="sym">$</span><span class="num" id="aGrowth-price">0</span><span class="per"> / yr</span>
+        </div>
+        <div class="annual-equiv" id="aGrowth-equiv">$0 / mo billed annually</div>
+        <div class="plan-profit-highlight">
+          <div class="profit-stat">
+            <div class="profit-stat-val" id="aGrowth-profit">$0</div>
+            <div class="profit-stat-lbl">Annual Profit</div>
+          </div>
+          <div class="profit-stat">
+            <div class="profit-stat-val profit-pct" id="aGrowth-margin">0%</div>
+            <div class="profit-stat-lbl">Profit Margin</div>
+          </div>
+        </div>
+        <div class="plan-metrics-row">
+          <div class="metric">
+            <div class="metric-val" id="aGrowth-savings">$0</div>
+            <div class="metric-lbl">Savings vs monthly</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="aGrowth-cpm">$0.0000</div>
+            <div class="metric-lbl">Annual cost / min</div>
+          </div>
+        </div>
+        <button class="card-cta cta-grad" onclick="goToCustomize('growth')">Get Started</button>
+      </div>
+
+      <!-- ENTERPRISE ANNUAL -->
+      <div class="pricing-card">
+        <span class="annual-badge">SAVE <span id="aEnterprise-discPct">15</span>%</span>
+        <div class="plan-tier">Enterprise Annual</div>
+        <div class="plan-mins">50,000 minutes / month</div>
+        <div class="plan-price-row">
+          <span class="sym">$</span><span class="num" id="aEnterprise-price">0</span><span class="per"> / yr</span>
+        </div>
+        <div class="annual-equiv" id="aEnterprise-equiv">$0 / mo billed annually</div>
+        <div class="plan-profit-highlight">
+          <div class="profit-stat">
+            <div class="profit-stat-val" id="aEnterprise-profit">$0</div>
+            <div class="profit-stat-lbl">Annual Profit</div>
+          </div>
+          <div class="profit-stat">
+            <div class="profit-stat-val profit-pct" id="aEnterprise-margin">0%</div>
+            <div class="profit-stat-lbl">Profit Margin</div>
+          </div>
+        </div>
+        <div class="plan-metrics-row">
+          <div class="metric">
+            <div class="metric-val" id="aEnterprise-savings">$0</div>
+            <div class="metric-lbl">Savings vs monthly</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" id="aEnterprise-cpm">$0.0000</div>
+            <div class="metric-lbl">Annual cost / min</div>
+          </div>
+        </div>
+        <button class="card-cta cta-outline" onclick="goToCustomize('enterprise')">Contact Sales</button>
+      </div>
+
+    </div><!-- /annualPricing -->
+
+  </div><!-- /calc-box -->
+</section>
+
+
+<!-- ===================================================
+     CALCULATION BREAKDOWN
+     =================================================== -->
+<section class="section" id="breakdown">
+  <div class="section-head">
+    <div class="section-label">How We Price</div>
+    <h2>Calculation Breakdown</h2>
+    <p>Every number on the pricing cards is derived from these five steps. Change any input above and watch the formulas update live.</p>
+  </div>
+
+  <div class="breakdown-grid">
+
+    <!-- STARTER BREAKDOWN -->
+    <div class="bd-card">
+      <div class="bd-card-header">
+        <span class="bd-plan-name">Starter</span>
+        <span class="bd-plan-mins">1,000 min / mo</span>
+      </div>
+      <div class="bd-steps">
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">1</span>Technuf Per-Minute Rate</div>
+          <div class="bd-formula-abstract">Enterprise Rate × Plan Multiplier</div>
+          <div class="bd-formula-live" id="bd-starter-s1">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">2</span>Technuf Monthly Base Cost</div>
+          <div class="bd-formula-abstract">Per-Minute Rate × Included Minutes</div>
+          <div class="bd-formula-live" id="bd-starter-s2">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">3</span>Total Cost (with Overhead)</div>
+          <div class="bd-formula-abstract">Base Cost + (Base Cost × Overhead %)</div>
+          <div class="bd-formula-live" id="bd-starter-s3">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">4</span>Final Selling Price</div>
+          <div class="bd-formula-abstract">Total Cost ÷ (1 − Profit Margin)</div>
+          <div class="bd-formula-live" id="bd-starter-s4">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">5</span>Selling Price per Minute</div>
+          <div class="bd-formula-abstract">Final Price ÷ Included Minutes</div>
+          <div class="bd-formula-live" id="bd-starter-s5">—</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- GROWTH BREAKDOWN -->
+    <div class="bd-card bd-featured">
+      <div class="bd-card-header">
+        <span class="bd-plan-name">Growth ⭐</span>
+        <span class="bd-plan-mins">10,000 min / mo</span>
+      </div>
+      <div class="bd-steps">
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">1</span>Technuf Per-Minute Rate</div>
+          <div class="bd-formula-abstract">Enterprise Rate × Plan Multiplier</div>
+          <div class="bd-formula-live" id="bd-growth-s1">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">2</span>Technuf Monthly Base Cost</div>
+          <div class="bd-formula-abstract">Per-Minute Rate × Included Minutes</div>
+          <div class="bd-formula-live" id="bd-growth-s2">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">3</span>Total Cost (with Overhead)</div>
+          <div class="bd-formula-abstract">Base Cost + (Base Cost × Overhead %)</div>
+          <div class="bd-formula-live" id="bd-growth-s3">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">4</span>Final Selling Price</div>
+          <div class="bd-formula-abstract">Total Cost ÷ (1 − Profit Margin)</div>
+          <div class="bd-formula-live" id="bd-growth-s4">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">5</span>Selling Price per Minute</div>
+          <div class="bd-formula-abstract">Final Price ÷ Included Minutes</div>
+          <div class="bd-formula-live" id="bd-growth-s5">—</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ENTERPRISE BREAKDOWN -->
+    <div class="bd-card">
+      <div class="bd-card-header">
+        <span class="bd-plan-name">Enterprise</span>
+        <span class="bd-plan-mins">50,000 min / mo</span>
+      </div>
+      <div class="bd-steps">
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">1</span>Technuf Per-Minute Rate</div>
+          <div class="bd-formula-abstract">Enterprise Rate × Plan Multiplier</div>
+          <div class="bd-formula-live" id="bd-enterprise-s1">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">2</span>Technuf Monthly Base Cost</div>
+          <div class="bd-formula-abstract">Per-Minute Rate × Included Minutes</div>
+          <div class="bd-formula-live" id="bd-enterprise-s2">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">3</span>Total Cost (with Overhead)</div>
+          <div class="bd-formula-abstract">Base Cost + (Base Cost × Overhead %)</div>
+          <div class="bd-formula-live" id="bd-enterprise-s3">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">4</span>Final Selling Price</div>
+          <div class="bd-formula-abstract">Total Cost ÷ (1 − Profit Margin)</div>
+          <div class="bd-formula-live" id="bd-enterprise-s4">—</div>
+        </div>
+
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">5</span>Selling Price per Minute</div>
+          <div class="bd-formula-abstract">Final Price ÷ Included Minutes</div>
+          <div class="bd-formula-live" id="bd-enterprise-s5">—</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /breakdown-grid -->
+
+  <!-- Annual Breakdown -->
+  <div class="section-head" style="margin-top:64px;">
+    <div class="section-label">Annual Pricing Formulas</div>
+    <h2>Annual Calculation Breakdown</h2>
+    <p>Shows how the discounted annual price, profit, and margin after discount are derived.</p>
+  </div>
+
+  <div class="breakdown-grid">
+
+    <!-- STARTER ANNUAL BREAKDOWN -->
+    <div class="bd-card">
+      <div class="bd-card-header">
+        <span class="bd-plan-name">Starter Annual</span>
+        <span class="bd-plan-mins">1,000 min / mo</span>
+      </div>
+      <div class="bd-steps">
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">1</span>Normal Annual Price</div>
+          <div class="bd-formula-abstract">Monthly Price × 12</div>
+          <div class="bd-formula-live" id="abd-starter-s1">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">2</span>Discounted Annual Price</div>
+          <div class="bd-formula-abstract">Normal Annual × (1 − Discount %)</div>
+          <div class="bd-formula-live" id="abd-starter-s2">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">3</span>Annual Cost (Your Expense)</div>
+          <div class="bd-formula-abstract">Monthly Cost × 12</div>
+          <div class="bd-formula-live" id="abd-starter-s3">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">4</span>Annual Profit</div>
+          <div class="bd-formula-abstract">Discounted Annual Price − Annual Cost</div>
+          <div class="bd-formula-live" id="abd-starter-s4">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">5</span>Profit Margin After Discount</div>
+          <div class="bd-formula-abstract">(Annual Profit ÷ Discounted Price) × 100</div>
+          <div class="bd-formula-live" id="abd-starter-s5">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROWTH ANNUAL BREAKDOWN -->
+    <div class="bd-card bd-featured">
+      <div class="bd-card-header">
+        <span class="bd-plan-name">Growth Annual ⭐</span>
+        <span class="bd-plan-mins">10,000 min / mo</span>
+      </div>
+      <div class="bd-steps">
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">1</span>Normal Annual Price</div>
+          <div class="bd-formula-abstract">Monthly Price × 12</div>
+          <div class="bd-formula-live" id="abd-growth-s1">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">2</span>Discounted Annual Price</div>
+          <div class="bd-formula-abstract">Normal Annual × (1 − Discount %)</div>
+          <div class="bd-formula-live" id="abd-growth-s2">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">3</span>Annual Cost (Your Expense)</div>
+          <div class="bd-formula-abstract">Monthly Cost × 12</div>
+          <div class="bd-formula-live" id="abd-growth-s3">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">4</span>Annual Profit</div>
+          <div class="bd-formula-abstract">Discounted Annual Price − Annual Cost</div>
+          <div class="bd-formula-live" id="abd-growth-s4">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">5</span>Profit Margin After Discount</div>
+          <div class="bd-formula-abstract">(Annual Profit ÷ Discounted Price) × 100</div>
+          <div class="bd-formula-live" id="abd-growth-s5">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENTERPRISE ANNUAL BREAKDOWN -->
+    <div class="bd-card">
+      <div class="bd-card-header">
+        <span class="bd-plan-name">Enterprise Annual</span>
+        <span class="bd-plan-mins">50,000 min / mo</span>
+      </div>
+      <div class="bd-steps">
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">1</span>Normal Annual Price</div>
+          <div class="bd-formula-abstract">Monthly Price × 12</div>
+          <div class="bd-formula-live" id="abd-enterprise-s1">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">2</span>Discounted Annual Price</div>
+          <div class="bd-formula-abstract">Normal Annual × (1 − Discount %)</div>
+          <div class="bd-formula-live" id="abd-enterprise-s2">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">3</span>Annual Cost (Your Expense)</div>
+          <div class="bd-formula-abstract">Monthly Cost × 12</div>
+          <div class="bd-formula-live" id="abd-enterprise-s3">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">4</span>Annual Profit</div>
+          <div class="bd-formula-abstract">Discounted Annual Price − Annual Cost</div>
+          <div class="bd-formula-live" id="abd-enterprise-s4">—</div>
+        </div>
+        <div class="bd-step">
+          <div class="bd-step-label"><span class="step-num">5</span>Profit Margin After Discount</div>
+          <div class="bd-formula-abstract">(Annual Profit ÷ Discounted Price) × 100</div>
+          <div class="bd-formula-live" id="abd-enterprise-s5">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /annual-breakdown-grid -->
+</section>
+
+
+<!-- ===================================================
+     COMPARISON TABLE
+     =================================================== -->
+<section class="section">
+  <div class="section-head">
+    <div class="section-label">Compare Plans</div>
+    <h2>Find the Right Fit for Your Team</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Starter</th>
+          <th class="feat-col">⭐ Growth</th>
+          <th>Enterprise</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Minutes / Month</td>
+          <td>1,000</td>
+          <td class="feat-col">10,000</td>
+          <td>50,000</td>
+        </tr>
+        <tr>
+          <td>AI Calling Agents</td>
+          <td>1</td>
+          <td class="feat-col">3</td>
+          <td>Unlimited</td>
+        </tr>
+        <tr>
+          <td>Call Routing</td>
+          <td>Basic</td>
+          <td class="feat-col">Advanced + IVR</td>
+          <td>Fully Custom</td>
+        </tr>
+        <tr>
+          <td>Call Summaries &amp; Transcripts</td>
+          <td><span class="chk">✓</span></td>
+          <td class="feat-col"><span class="chk">✓</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>Email Alerts</td>
+          <td><span class="chk">✓</span></td>
+          <td class="feat-col"><span class="chk">✓</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>CRM Integration</td>
+          <td><span class="crs">—</span></td>
+          <td class="feat-col"><span class="chk">✓</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>Analytics Dashboard</td>
+          <td><span class="crs">—</span></td>
+          <td class="feat-col"><span class="chk">✓</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>Custom Voice &amp; Script</td>
+          <td><span class="crs">—</span></td>
+          <td class="feat-col"><span class="chk">✓</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>API Access</td>
+          <td><span class="crs">—</span></td>
+          <td class="feat-col"><span class="crs">—</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>Custom Integrations</td>
+          <td><span class="crs">—</span></td>
+          <td class="feat-col"><span class="crs">—</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>White-Label Branding</td>
+          <td><span class="crs">—</span></td>
+          <td class="feat-col"><span class="crs">—</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>Dedicated Onboarding</td>
+          <td><span class="crs">—</span></td>
+          <td class="feat-col"><span class="crs">—</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>Account Manager</td>
+          <td><span class="crs">—</span></td>
+          <td class="feat-col"><span class="crs">—</span></td>
+          <td><span class="chk">✓</span></td>
+        </tr>
+        <tr>
+          <td>Support SLA</td>
+          <td>48 hours</td>
+          <td class="feat-col">12 hours</td>
+          <td>4 hours</td>
+        </tr>
+        <tr>
+          <td>One-Time Setup Fee</td>
+          <td id="tblFee0">$499</td>
+          <td class="feat-col" id="tblFee1">$499</td>
+          <td id="tblFee2">$499</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ===================================================
+     EXPORT SECTION
+     =================================================== -->
+<section class="section section-alt" id="export">
+  <div class="section-head">
+    <div class="section-label">Export Quote</div>
+    <h2>Download Client Quotation</h2>
+    <p>Export the complete customized quote with all pricing details and client information.</p>
+  </div>
+  <div class="export-panel">
+    <h2>Ready to Export</h2>
+    <p>All exports include client details, pricing configuration, monthly &amp; annual summaries, and full calculation breakdowns.</p>
+    <div class="export-btns">
+      <button class="export-btn export-btn-pdf" onclick="exportPDF()">PDF Export</button>
+      <button class="export-btn export-btn-xlsx" onclick="exportExcel()">Excel Export</button>
+      <button class="export-btn export-btn-doc" onclick="exportDOC()">DOC Export</button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================================================
+     FOOTER
+     =================================================== -->
+<footer>
+  <div class="f-logo"><img src="iconnect-logo.png" alt="iConnect" /></div>
+  <p>AI-Powered Calling Agents — Powered by Technuf</p>
+  <p style="margin-top:8px;">© 2025 iConnect. All rights reserved.</p>
+</footer>
+
+
+<script>
+  // =============================================
+  // TECHNUF FIXED ENTERPRISE PRICING MODEL
+  //
+  // All base costs are derived from the single
+  // Technuf enterprise rate. Starter and Growth
+  // carry small premiums to reflect lower volume.
+  //
+  //   starter_cpm    = 0.08 × 1.050 = $0.0840/min
+  //   growth_cpm     = 0.08 × 1.025 = $0.0820/min
+  //   enterprise_cpm = 0.08 × 1.000 = $0.0800/min
+  //
+  //   base_monthly = cpm × included_minutes
+  // =============================================
+  const TECHNUF_ENTERPRISE_RATE = 0.08; // $/min
+
+  const PLAN_CONFIG = [
+    { key: 'starter',    minutes: 1_000,  multiplier: 1.050 }, // +5%  above enterprise
+    { key: 'growth',     minutes: 10_000, multiplier: 1.025 }, // +2.5% above enterprise
+    { key: 'enterprise', minutes: 50_000, multiplier: 1.000 }, // enterprise rate directly
+  ];
+
+  // Fixed base monthly costs — computed once, never editable
+  // starter: 0.0840 × 1,000  = $84
+  // growth:  0.0820 × 10,000 = $820
+  // enterprise: 0.08 × 50,000 = $4,000
+  const FIXED_BASES = Object.fromEntries(
+    PLAN_CONFIG.map(p => [
+      p.key,
+      TECHNUF_ENTERPRISE_RATE * p.multiplier * p.minutes,
+    ])
+  );
+
+  // =============================================
+  // CONFIGURABLE DEFAULTS (user-editable inputs only)
+  // =============================================
+  const DEFAULTS = {
+    profitMargin:   60,
+    overhead:       15,
+    setupFee:       499,
+    overageRate:    0.05,
+    annualDiscount: 15,
+  };
+
+  // =============================================
+  // PLAN METADATA
+  // Each entry maps a plan key to its minute limit
+  // and the DOM IDs that display its computed values.
+  // =============================================
+  const PLANS = [
+    {
+      key:       'starter',
+      minutes:   1_000,
+      priceId:   'starterPrice',
+      cpmId:     'starterCPM',
+      profitId:  'starterProfit',
+      setupId:   'starterSetup',
+      overageId: 'starterOverage',
+    },
+    {
+      key:       'growth',
+      minutes:   10_000,
+      priceId:   'growthPrice',
+      cpmId:     'growthCPM',
+      profitId:  'growthProfit',
+      setupId:   'growthSetup',
+      overageId: 'growthOverage',
+    },
+    {
+      key:       'enterprise',
+      minutes:   50_000,
+      priceId:   'enterprisePrice',
+      cpmId:     'enterpriseCPM',
+      profitId:  'enterpriseProfit',
+      setupId:   'enterpriseSetup',
+      overageId: 'enterpriseOverage',
+    },
+  ];
+
+  // =============================================
+  // STEP 1 — calculatePlan()
+  //
+  // Pure function: takes raw inputs for one plan
+  // and returns every derived value needed by the UI.
+  //
+  // Formulas:
+  //   overheadCost  = baseCost × (overhead / 100)
+  //   totalCost     = baseCost + overheadCost
+  //   finalPrice    = totalCost ÷ (1 − profitMargin / 100)
+  //   profitAmount  = finalPrice − totalCost
+  //   costPerMin    = finalPrice ÷ minutes        ← from final price, not base cost
+  //   technufCPM = baseCost ÷ minutes          ← raw wholesale rate (breakdown only)
+  // =============================================
+  function calculatePlan(baseCost, overheadPct, profitMarginPct, minutes) {
+    const overheadCost   = baseCost * (overheadPct / 100);
+    const totalCost      = baseCost + overheadCost;
+    const profitFraction = Math.min(profitMarginPct / 100, 0.99); // cap to avoid ÷0
+    const finalPrice     = totalCost / (1 - profitFraction);
+    const profitAmount   = finalPrice - totalCost;
+    const costPerMin     = minutes > 0 ? finalPrice / minutes : 0;     // from final price
+    const technufCPM  = minutes > 0 ? baseCost  / minutes : 0;     // wholesale only
+    const profitPct = finalPrice > 0 ? (profitAmount / finalPrice) * 100 : 0;
+    return { baseCost, overheadCost, totalCost, finalPrice, profitAmount, profitPct, costPerMin, technufCPM };
+  }
+
+  // Stores the last-calculated result for each plan key.
+  // Used by goToCustomize() to pass live prices to customize.html.
+  let planResults = {};
+
+  // =============================================
+  // STEP 2 — renderAll()
+  //
+  // Reads every input, calls calculatePlan() for
+  // each plan, then writes results to the DOM.
+  // Also refreshes the breakdown panel and table.
+  // =============================================
+  function renderAll() {
+    // — Read global inputs
+    const profitMargin = parseFloat(document.getElementById('profitMargin').value) || 0;
+    const overhead     = parseFloat(document.getElementById('overhead').value)     || 0;
+    const setupFee     = parseFloat(document.getElementById('setupFee').value)     || 0;
+    const overageRate  = parseFloat(document.getElementById('overageRate').value)  || 0;
+
+    // — Render each pricing card using fixed Technuf-derived base costs
+    for (const plan of PLANS) {
+      const result = calculatePlan(FIXED_BASES[plan.key], overhead, profitMargin, plan.minutes);
+      planResults[plan.key] = result; // cache for goToCustomize()
+
+      // Monthly price (no decimals)
+      flash(plan.priceId, Math.round(result.finalPrice).toLocaleString('en-US'));
+
+      // Cost per min — derived from final selling price ÷ included minutes
+      flash(plan.cpmId, '$' + result.costPerMin.toFixed(4));
+
+      // Monthly profit
+      flash(plan.profitId, '$' + Math.round(result.profitAmount).toLocaleString('en-US'));
+
+      // Profit percentage
+      flash(plan.key + 'ProfitPct', result.profitPct.toFixed(1) + '%');
+
+      // Technuf CPM on card
+      flash(plan.key + 'ElCPM', '$' + result.technufCPM.toFixed(4));
+
+      // Setup fee note
+      document.getElementById(plan.setupId).textContent = setupFee > 0
+        ? `+ $${setupFee.toLocaleString('en-US')} one-time setup fee`
+        : 'No setup fee';
+
+      // Overage note
+      document.getElementById(plan.overageId).textContent = overageRate > 0
+        ? `$${overageRate.toFixed(3)}/min for extra minutes`
+        : 'No overage charges';
+    }
+
+    // — Read annual discount
+    const annualDiscount = parseFloat(document.getElementById('annualDiscount').value) || 0;
+
+    // — Refresh breakdown panel (bases are now fixed constants)
+    renderBreakdown(overhead, profitMargin);
+
+    // — Render annual pricing cards + breakdown
+    renderAnnualCards(annualDiscount);
+    renderAnnualBreakdown(annualDiscount);
+
+    // — Sync comparison table setup fee cells
+    const feeLabel = setupFee > 0 ? '$' + setupFee.toLocaleString('en-US') : 'Free';
+    ['tblFee0', 'tblFee1', 'tblFee2'].forEach(id => {
+      document.getElementById(id).textContent = feeLabel;
+    });
+  }
+
+  // =============================================
+  // BREAKDOWN PANEL RENDERER
+  //
+  // Five-step formula display. Steps 1–2 are fixed
+  // (derived from TECHNUF_ENTERPRISE_RATE).
+  // Steps 3–5 update whenever overhead or margin changes.
+  //
+  // Step 1: enterprise_rate × multiplier  = rawCPM
+  // Step 2: rawCPM × minutes              = baseMonthlyCost
+  // Step 3: baseCost + (baseCost × OH%)   = totalCost
+  // Step 4: totalCost ÷ (1 − margin)      = finalPrice
+  // Step 5: finalPrice ÷ minutes          = sellingCPM
+  // =============================================
+  function renderBreakdown(overheadPct, profitMarginPct) {
+    const n2  = v => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const n4  = v => v.toFixed(4);
+    const pct = v => (v % 1 === 0 ? v.toFixed(0) : v.toFixed(2));
+
+    for (const { key, minutes, multiplier } of PLAN_CONFIG) {
+      const rawCPM   = TECHNUF_ENTERPRISE_RATE * multiplier;
+      const baseCost = FIXED_BASES[key];              // rawCPM × minutes
+      const r        = calculatePlan(baseCost, overheadPct, profitMarginPct, minutes);
+
+      const set = (stepId, html) => {
+        const el = document.getElementById(`bd-${key}-${stepId}`);
+        if (el) el.innerHTML = html;
+      };
+
+      // Step 1 — Derive per-minute rate from enterprise rate
+      set('s1',
+        `$${n4(TECHNUF_ENTERPRISE_RATE)} × ${multiplier.toFixed(3)} = <span class="bd-result">$${n4(rawCPM)}/min</span>`
+      );
+
+      // Step 2 — Monthly base cost from per-minute rate × minutes
+      set('s2',
+        `$${n4(rawCPM)} × ${minutes.toLocaleString()} = <span class="bd-result">$${n2(baseCost)}/mo</span>`
+      );
+
+      // Step 3 — Total cost with overhead applied
+      set('s3',
+        `${n2(baseCost)} + (${n2(baseCost)} × ${pct(overheadPct)}%) = <span class="bd-result">$${n2(r.totalCost)}</span>`
+      );
+
+      // Step 4 — Final selling price via margin formula
+      set('s4',
+        `${n2(r.totalCost)} ÷ (1 − ${pct(profitMarginPct)}%) = <span class="bd-result">$${n2(r.finalPrice)}</span>`
+      );
+
+      // Step 5 — Selling price per minute
+      set('s5',
+        `${n2(r.finalPrice)} ÷ ${minutes.toLocaleString()} = <span class="bd-result">$${n4(r.costPerMin)}/min</span>`
+      );
+    }
+  }
+
+  // =============================================
+  // ANNUAL PRICING — DOM IDS per plan
+  // =============================================
+  const ANNUAL_IDS = {
+    starter:    { prefix: 'aStarter' },
+    growth:     { prefix: 'aGrowth' },
+    enterprise: { prefix: 'aEnterprise' },
+  };
+
+  // =============================================
+  // ANNUAL CALCULATION FUNCTION
+  //
+  // Takes the already-computed monthly values and
+  // an annual discount %, returns all annual metrics.
+  //
+  //   normalAnnual    = monthlyPrice × 12
+  //   discountedPrice = normalAnnual × (1 − discount%)
+  //   annualCost      = monthlyCost × 12
+  //   annualProfit    = discountedPrice − annualCost
+  //   marginAfterDisc = (annualProfit / discountedPrice) × 100
+  //   annualCPM       = discountedPrice / (minutes × 12)
+  //   savings         = normalAnnual − discountedPrice
+  // =============================================
+  function calculateAnnual(monthlyPrice, monthlyCost, discountPct, minutes) {
+    const normalAnnual     = monthlyPrice * 12;
+    const discountFraction = Math.min(discountPct / 100, 0.99);
+    const discountedPrice  = normalAnnual * (1 - discountFraction);
+    const annualCost       = monthlyCost * 12;
+    const annualProfit     = discountedPrice - annualCost;
+    const marginAfterDisc  = discountedPrice > 0 ? (annualProfit / discountedPrice) * 100 : 0;
+    const monthlyEquiv     = discountedPrice / 12;
+    const annualCPM        = (minutes * 12) > 0 ? discountedPrice / (minutes * 12) : 0;
+    const savings          = normalAnnual - discountedPrice;
+    return { normalAnnual, discountedPrice, annualCost, annualProfit, marginAfterDisc, monthlyEquiv, annualCPM, savings };
+  }
+
+  // =============================================
+  // RENDER ANNUAL CARDS
+  // =============================================
+  function renderAnnualCards(discountPct) {
+    const fmt  = v => '$' + Math.round(v).toLocaleString('en-US');
+    const pctD = Math.round(discountPct);
+
+    for (const { key, minutes } of PLAN_CONFIG) {
+      const mr     = planResults[key];     // monthly result from calculatePlan()
+      if (!mr) continue;
+
+      const a      = calculateAnnual(mr.finalPrice, mr.totalCost, discountPct, minutes);
+      const prefix = ANNUAL_IDS[key].prefix;
+
+      flash(`${prefix}-price`,   Math.round(a.discountedPrice).toLocaleString('en-US'));
+      flash(`${prefix}-profit`,  fmt(a.annualProfit));
+      flash(`${prefix}-margin`,  a.marginAfterDisc.toFixed(2) + '%');
+      flash(`${prefix}-savings`, fmt(a.savings));
+      flash(`${prefix}-cpm`,     '$' + a.annualCPM.toFixed(4));
+
+      document.getElementById(`${prefix}-equiv`).innerHTML =
+        `<strong>${fmt(Math.round(a.monthlyEquiv))}</strong> / mo billed annually`;
+
+      document.getElementById(`${prefix}-discPct`).textContent = pctD;
+    }
+  }
+
+  // =============================================
+  // RENDER ANNUAL BREAKDOWN
+  // =============================================
+  function renderAnnualBreakdown(discountPct) {
+    const n2  = v => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const pct = v => (v % 1 === 0 ? v.toFixed(0) : v.toFixed(2));
+
+    for (const { key, minutes } of PLAN_CONFIG) {
+      const mr = planResults[key];
+      if (!mr) continue;
+
+      const a = calculateAnnual(mr.finalPrice, mr.totalCost, discountPct, minutes);
+
+      const set = (stepId, html) => {
+        const el = document.getElementById(`abd-${key}-${stepId}`);
+        if (el) el.innerHTML = html;
+      };
+
+      // Step 1 — Normal annual price
+      set('s1',
+        `${n2(mr.finalPrice)} × 12 = <span class="bd-result">$${n2(a.normalAnnual)}/yr</span>`
+      );
+
+      // Step 2 — Discounted annual price
+      set('s2',
+        `${n2(a.normalAnnual)} × (1 − ${pct(discountPct)}%) = <span class="bd-result">$${n2(a.discountedPrice)}/yr</span>`
+      );
+
+      // Step 3 — Annual cost (your expense × 12)
+      set('s3',
+        `${n2(mr.totalCost)} × 12 = <span class="bd-result">$${n2(a.annualCost)}/yr</span>`
+      );
+
+      // Step 4 — Annual profit
+      set('s4',
+        `${n2(a.discountedPrice)} − ${n2(a.annualCost)} = <span class="bd-result">$${n2(a.annualProfit)}</span>`
+      );
+
+      // Step 5 — Profit margin after discount
+      set('s5',
+        `(${n2(a.annualProfit)} ÷ ${n2(a.discountedPrice)}) × 100 = <span class="bd-result">${a.marginAfterDisc.toFixed(2)}%</span>`
+      );
+    }
+  }
+
+  // =============================================
+  // FLASH ANIMATION HELPER
+  // =============================================
+  function flash(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = value;
+    el.classList.remove('flash');
+    void el.offsetWidth; // force reflow to restart animation
+    el.classList.add('flash');
+  }
+
+  // =============================================
+  // NAVIGATE TO CUSTOMIZE PAGE
+  //
+  // Builds a URL with the current calculated price,
+  // setup fee, and overage rate as query params so
+  // customize.html shows consistent numbers.
+  // =============================================
+  function goToCustomize(planKey) {
+    const result = planResults[planKey];
+    if (!result) return;
+
+    const setup   = parseFloat(document.getElementById('setupFee').value)   || 0;
+    const overage = parseFloat(document.getElementById('overageRate').value) || 0;
+
+    const params = new URLSearchParams({
+      plan:    planKey,
+      price:   Math.round(result.finalPrice),
+      setup:   setup,
+      overage: overage,
+    });
+
+    window.location.href = `customize.html?${params.toString()}`;
+  }
+
+  // =============================================
+  // RESET TO DEFAULTS
+  // =============================================
+  function resetDefaults() {
+    document.getElementById('profitMargin').value = DEFAULTS.profitMargin;
+    document.getElementById('overhead').value     = DEFAULTS.overhead;
+    document.getElementById('setupFee').value     = DEFAULTS.setupFee;
+    document.getElementById('overageRate').value     = DEFAULTS.overageRate;
+    document.getElementById('annualDiscount').value  = DEFAULTS.annualDiscount;
+    renderAll();
+  }
+
+  // =============================================
+  // DARK / LIGHT MODE TOGGLE
+  // =============================================
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn  = document.getElementById('themeBtn');
+    if (html.getAttribute('data-theme') === 'dark') {
+      html.setAttribute('data-theme', 'light');
+      btn.textContent = '🌙';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      btn.textContent = '☀️';
+    }
+  }
+
+  // =============================================
+  // INIT — attach event listeners + first render
+  //
+  // All 7 Pricing Configuration inputs call renderAll()
+  // on every keystroke via 'input' events.
+  // =============================================
+  // Only the 4 user-configurable inputs trigger a recalculate.
+  // Base costs are fixed constants — no inputs to listen to.
+  const CONFIG_INPUT_IDS = [
+    'profitMargin', 'overhead', 'setupFee', 'overageRate', 'annualDiscount',
+  ];
+
+  CONFIG_INPUT_IDS.forEach(id => {
+    document.getElementById(id).addEventListener('input', renderAll);
+  });
+
+  // Set today's date as default for the quote date
+  document.getElementById('quoteDate').valueAsDate = new Date();
+
+  renderAll(); // initial render on page load
+
+  // =============================================
+  // HELPER — gather all current quote data
+  // =============================================
+  function gatherQuoteData() {
+    const clientName    = document.getElementById('clientName').value || 'Client';
+    const contactPerson = document.getElementById('contactPerson').value || '';
+    const quoteDate     = document.getElementById('quoteDate').value || new Date().toISOString().slice(0,10);
+    const preparedBy    = document.getElementById('preparedBy').value || '';
+    const quoteNotes    = document.getElementById('quoteNotes').value || '';
+
+    const profitMargin   = parseFloat(document.getElementById('profitMargin').value) || 0;
+    const overhead       = parseFloat(document.getElementById('overhead').value) || 0;
+    const setupFee       = parseFloat(document.getElementById('setupFee').value) || 0;
+    const overageRate    = parseFloat(document.getElementById('overageRate').value) || 0;
+    const annualDiscount = parseFloat(document.getElementById('annualDiscount').value) || 0;
+
+    // Build consistent structured data for monthly and annual
+    const monthlyPackages = PLAN_CONFIG.map(p => {
+      const mr = planResults[p.key];
+      if (!mr) return null;
+      return {
+        name: p.key.charAt(0).toUpperCase() + p.key.slice(1),
+        key: p.key,
+        minutes: p.minutes,
+        multiplier: p.multiplier,
+        technufCPM: mr.technufCPM,
+        baseCost: mr.baseCost,
+        totalCost: mr.totalCost,
+        finalPrice: mr.finalPrice,
+        profitAmount: mr.profitAmount,
+        profitPct: mr.profitPct,
+        costPerMin: mr.costPerMin,
+      };
+    }).filter(Boolean);
+
+    const annualPackages = PLAN_CONFIG.map(p => {
+      const mr = planResults[p.key];
+      if (!mr) return null;
+      const a = calculateAnnual(mr.finalPrice, mr.totalCost, annualDiscount, p.minutes);
+      return {
+        name: p.key.charAt(0).toUpperCase() + p.key.slice(1),
+        key: p.key,
+        minutesPerMonth: p.minutes,
+        minutesPerYear: p.minutes * 12,
+        annualPrice: a.discountedPrice,
+        monthlyEquiv: a.monthlyEquiv,
+        savings: a.savings,
+        annualProfit: a.annualProfit,
+        annualProfitPct: a.marginAfterDisc,
+        annualCPM: a.annualCPM,
+        annualCost: a.annualCost,
+        normalAnnual: a.normalAnnual,
+      };
+    }).filter(Boolean);
+
+    // Legacy-compatible plans array (used by PDF/DOC exporters)
+    const plans = monthlyPackages.map((mp, i) => ({
+      ...mp,
+      annual: {
+        discountedPrice: annualPackages[i].annualPrice,
+        monthlyEquiv: annualPackages[i].monthlyEquiv,
+        savings: annualPackages[i].savings,
+        annualProfit: annualPackages[i].annualProfit,
+        marginAfterDisc: annualPackages[i].annualProfitPct,
+        annualCPM: annualPackages[i].annualCPM,
+        annualCost: annualPackages[i].annualCost,
+        normalAnnual: annualPackages[i].normalAnnual,
+      },
+    }));
+
+    const fileSlug = clientName.trim().replace(/[^a-zA-Z0-9]+/g, '-') || 'Client';
+
+    return { clientName, contactPerson, quoteDate, preparedBy, quoteNotes,
+             profitMargin, overhead, setupFee, overageRate, annualDiscount,
+             monthlyPackages, annualPackages, plans, fileSlug };
+  }
+
+  // =============================================
+  // EXPORT PDF  (jsPDF + autoTable)
+  // =============================================
+  function exportPDF() {
+    const d = gatherQuoteData();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pw = doc.internal.pageSize.getWidth();
+    let y = 15;
+
+    const addTitle = (text) => { doc.setFontSize(16); doc.setFont(undefined, 'bold'); doc.text(text, 14, y); y += 10; };
+    const addSubtitle = (text) => { doc.setFontSize(12); doc.setFont(undefined, 'bold'); doc.text(text, 14, y); y += 8; };
+    const addLine = (label, val) => { doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.text(`${label}: ${val}`, 14, y); y += 6; };
+    const checkPage = (need) => { if (y + need > 280) { doc.addPage(); y = 15; } };
+
+    // Header
+    doc.setFillColor(124, 92, 252);
+    doc.rect(0, 0, pw, 32, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20); doc.setFont(undefined, 'bold');
+    doc.text('iConnect — Client Quotation', 14, 20);
+    doc.setTextColor(0, 0, 0);
+    y = 42;
+
+    // Client Details
+    addSubtitle('Client Details');
+    addLine('Company', d.clientName);
+    addLine('Contact Person', d.contactPerson);
+    addLine('Date', d.quoteDate);
+    addLine('Prepared By', d.preparedBy);
+    if (d.quoteNotes) { addLine('Notes', d.quoteNotes); }
+    y += 4;
+
+    // Pricing Configuration
+    checkPage(40);
+    addSubtitle('Pricing Configuration');
+    addLine('Profit Margin', d.profitMargin + '%');
+    addLine('Overhead', d.overhead + '%');
+    addLine('Setup Fee', '$' + d.setupFee);
+    addLine('Overage Rate', '$' + d.overageRate + '/min');
+    addLine('Annual Discount', d.annualDiscount + '%');
+    y += 4;
+
+    // Technuf Wholesale
+    checkPage(30);
+    addSubtitle('Technuf Wholesale Costs');
+    addLine('Enterprise Base Rate', '$0.08/min');
+    d.plans.forEach(p => {
+      addLine(`${p.name} (${p.minutes.toLocaleString()} min)`, `$${p.technufCPM.toFixed(4)}/min = $${p.baseCost.toFixed(2)}/mo`);
+    });
+    y += 4;
+
+    // Monthly Summary Table
+    checkPage(50);
+    addSubtitle('Monthly Package Summary');
+    doc.autoTable({
+      startY: y,
+      head: [['Plan', 'Minutes', 'EL CPM', 'EL Base Cost', 'Final Price', 'Sell $/min', 'Profit', 'Profit %']],
+      body: d.plans.map(p => [
+        p.name,
+        p.minutes.toLocaleString(),
+        '$' + p.technufCPM.toFixed(4),
+        '$' + p.baseCost.toFixed(2),
+        '$' + Math.round(p.finalPrice).toLocaleString(),
+        '$' + p.costPerMin.toFixed(4),
+        '$' + Math.round(p.profitAmount).toLocaleString(),
+        p.profitPct.toFixed(1) + '%',
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [124, 92, 252] },
+      margin: { left: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    // Annual Summary Table
+    checkPage(50);
+    addSubtitle('Annual Package Summary');
+    doc.autoTable({
+      startY: y,
+      head: [['Plan', 'Annual Price', 'Monthly Equiv', 'Savings', 'Annual Profit', 'Profit % After Disc', '$/min']],
+      body: d.plans.map(p => [
+        p.name,
+        '$' + Math.round(p.annual.discountedPrice).toLocaleString(),
+        '$' + Math.round(p.annual.monthlyEquiv).toLocaleString(),
+        '$' + Math.round(p.annual.savings).toLocaleString(),
+        '$' + Math.round(p.annual.annualProfit).toLocaleString(),
+        p.annual.marginAfterDisc.toFixed(2) + '%',
+        '$' + p.annual.annualCPM.toFixed(4),
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [34, 232, 122] },
+      margin: { left: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    // Calculation Breakdown
+    checkPage(60);
+    addSubtitle('Calculation Breakdown');
+    d.plans.forEach(p => {
+      checkPage(45);
+      doc.setFontSize(10); doc.setFont(undefined, 'bold');
+      doc.text(`${p.name} (${p.minutes.toLocaleString()} min/mo)`, 14, y); y += 6;
+      doc.setFont(undefined, 'normal'); doc.setFontSize(9);
+      const cfg = PLAN_CONFIG.find(c => c.key === p.name.toLowerCase());
+      const lines = [
+        `1. EL Rate: $0.08 x ${cfg.multiplier.toFixed(3)} = $${p.technufCPM.toFixed(4)}/min`,
+        `2. Base Cost: $${p.technufCPM.toFixed(4)} x ${p.minutes.toLocaleString()} = $${p.baseCost.toFixed(2)}`,
+        `3. Total Cost: $${p.baseCost.toFixed(2)} + ($${p.baseCost.toFixed(2)} x ${d.overhead}%) = $${p.totalCost.toFixed(2)}`,
+        `4. Final Price: $${p.totalCost.toFixed(2)} / (1 - ${d.profitMargin}%) = $${p.finalPrice.toFixed(2)}`,
+        `5. Profit: $${p.finalPrice.toFixed(2)} - $${p.totalCost.toFixed(2)} = $${p.profitAmount.toFixed(2)} (${p.profitPct.toFixed(1)}%)`,
+        `6. Annual: $${p.finalPrice.toFixed(2)} x 12 x (1 - ${d.annualDiscount}%) = $${p.annual.discountedPrice.toFixed(2)}/yr`,
+        `7. Annual Profit: $${p.annual.discountedPrice.toFixed(2)} - $${p.annual.annualCost.toFixed(2)} = $${p.annual.annualProfit.toFixed(2)} (${p.annual.marginAfterDisc.toFixed(2)}%)`,
+        `8. Sell $/min: $${p.finalPrice.toFixed(2)} / ${p.minutes.toLocaleString()} = $${p.costPerMin.toFixed(4)}`,
+      ];
+      lines.forEach(l => { doc.text(l, 18, y); y += 5; });
+      y += 4;
+    });
+
+    // Footer
+    checkPage(15);
+    doc.setFontSize(8); doc.setTextColor(120, 120, 120);
+    doc.text('Generated by iConnect Quotation Tool', 14, 285);
+
+    doc.save(`${d.fileSlug}-iConnect-Quote.pdf`);
+  }
+
+  // =============================================
+  // EXPORT EXCEL  (SheetJS) — 4 dedicated sheets
+  // =============================================
+  function exportExcel() {
+    const d = gatherQuoteData();
+    const wb = XLSX.utils.book_new();
+
+    // ── Sheet 1: Client Details ──
+    const clientData = [
+      ['iConnect Client Quotation'],
+      [],
+      ['Field', 'Value'],
+      ['Company Name', d.clientName],
+      ['Contact Person', d.contactPerson],
+      ['Date', d.quoteDate],
+      ['Prepared By', d.preparedBy],
+      ['Notes', d.quoteNotes],
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(clientData);
+    ws1['!cols'] = [{ wch: 22 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Client Details');
+
+    // ── Sheet 2: Pricing Configuration ──
+    const configData = [
+      ['Pricing Configuration'],
+      [],
+      ['Setting', 'Value'],
+      ['Profit Margin', d.profitMargin + '%'],
+      ['Overhead', d.overhead + '%'],
+      ['One-Time Setup Fee', '$' + d.setupFee],
+      ['Overage Rate', '$' + d.overageRate + '/min'],
+      ['Annual Discount', d.annualDiscount + '%'],
+      [],
+      ['Technuf Wholesale Costs'],
+      ['Enterprise Base Rate', '$0.08/min'],
+      [],
+      ['Plan', 'Rate Derivation', 'Cost Per Minute', 'Monthly Base Cost'],
+    ];
+    d.monthlyPackages.forEach(p => {
+      configData.push([
+        p.name,
+        `$0.08 x ${p.multiplier.toFixed(3)}`,
+        '$' + p.technufCPM.toFixed(4),
+        '$' + p.baseCost.toFixed(2),
+      ]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(configData);
+    ws2['!cols'] = [{ wch: 24 }, { wch: 20 }, { wch: 18 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Pricing Config');
+
+    // ── Sheet 3: Monthly Packages ──
+    const monthlyData = [
+      ['Monthly Package Summary'],
+      [],
+      [
+        'Package Name',
+        'Included Minutes',
+        'Technuf Cost/Min',
+        'Technuf Monthly Base',
+        'Final Monthly Price',
+        'Selling Price/Min',
+        'Monthly Profit',
+        'Monthly Profit Margin %',
+      ],
+    ];
+    d.monthlyPackages.forEach(p => {
+      monthlyData.push([
+        p.name,
+        p.minutes,
+        '$' + p.technufCPM.toFixed(4),
+        '$' + p.baseCost.toFixed(2),
+        '$' + Math.round(p.finalPrice).toLocaleString(),
+        '$' + p.costPerMin.toFixed(4),
+        '$' + Math.round(p.profitAmount).toLocaleString(),
+        p.profitPct.toFixed(1) + '%',
+      ]);
+    });
+    const ws3 = XLSX.utils.aoa_to_sheet(monthlyData);
+    ws3['!cols'] = Array(8).fill({ wch: 22 });
+    XLSX.utils.book_append_sheet(wb, ws3, 'Monthly Packages');
+
+    // ── Sheet 4: Annual Packages ──
+    const annualData = [
+      ['Annual Package Summary'],
+      [],
+      [
+        'Package Name',
+        'Included Minutes/Month',
+        'Total Minutes/Year',
+        'Annual Price',
+        'Equivalent Monthly Price',
+        'Annual Savings',
+        'Annual Profit',
+        'Annual Profit Margin %',
+        'Annual Per-Minute Cost',
+      ],
+    ];
+    d.annualPackages.forEach(p => {
+      annualData.push([
+        p.name,
+        p.minutesPerMonth,
+        p.minutesPerYear,
+        '$' + Math.round(p.annualPrice).toLocaleString(),
+        '$' + Math.round(p.monthlyEquiv).toLocaleString(),
+        '$' + Math.round(p.savings).toLocaleString(),
+        '$' + Math.round(p.annualProfit).toLocaleString(),
+        p.annualProfitPct.toFixed(2) + '%',
+        '$' + p.annualCPM.toFixed(4),
+      ]);
+    });
+    const ws4 = XLSX.utils.aoa_to_sheet(annualData);
+    ws4['!cols'] = Array(9).fill({ wch: 22 });
+    XLSX.utils.book_append_sheet(wb, ws4, 'Annual Packages');
+
+    XLSX.writeFile(wb, `${d.fileSlug}-iConnect-Quote.xlsx`);
+  }
+
+  // =============================================
+  // EXPORT DOC  (HTML Blob → .doc)
+  // =============================================
+  function exportDOC() {
+    const d = gatherQuoteData();
+    const n2 = v => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>iConnect Quote</title>
+<style>
+body{font-family:Calibri,Arial,sans-serif;color:#1a1a2e;padding:20px;}
+h1{color:#7c5cfc;border-bottom:3px solid #7c5cfc;padding-bottom:8px;}
+h2{color:#333;margin-top:24px;border-bottom:1px solid #ddd;padding-bottom:6px;}
+table{border-collapse:collapse;width:100%;margin:12px 0;}
+th,td{border:1px solid #ccc;padding:8px 12px;text-align:left;font-size:11pt;}
+th{background:#7c5cfc;color:#fff;font-weight:bold;}
+.green-th th{background:#22e87a;color:#fff;}
+.info-row td:first-child{font-weight:bold;width:180px;background:#f5f5ff;}
+.profit{color:#22e87a;font-weight:bold;font-size:13pt;}
+.section-note{color:#666;font-size:10pt;margin-bottom:4px;}
+</style></head><body>`;
+
+    // Header
+    html += `<h1>iConnect — Client Quotation</h1>`;
+
+    // Client Details
+    html += `<h2>Client Details</h2>
+<table>
+<tr class="info-row"><td>Company</td><td>${d.clientName}</td></tr>
+<tr class="info-row"><td>Contact Person</td><td>${d.contactPerson}</td></tr>
+<tr class="info-row"><td>Date</td><td>${d.quoteDate}</td></tr>
+<tr class="info-row"><td>Prepared By</td><td>${d.preparedBy}</td></tr>
+<tr class="info-row"><td>Notes</td><td>${d.quoteNotes}</td></tr>
+</table>`;
+
+    // Pricing Config
+    html += `<h2>Pricing Configuration</h2>
+<table>
+<tr class="info-row"><td>Profit Margin</td><td>${d.profitMargin}%</td></tr>
+<tr class="info-row"><td>Overhead</td><td>${d.overhead}%</td></tr>
+<tr class="info-row"><td>Setup Fee</td><td>$${d.setupFee}</td></tr>
+<tr class="info-row"><td>Overage Rate</td><td>$${d.overageRate}/min</td></tr>
+<tr class="info-row"><td>Annual Discount</td><td>${d.annualDiscount}%</td></tr>
+</table>`;
+
+    // Technuf Wholesale
+    html += `<h2>Technuf Wholesale Costs</h2>
+<p class="section-note">Enterprise base rate: <strong>$0.08/min</strong></p>
+<table><tr><th>Plan</th><th>Minutes</th><th>Rate Derivation</th><th>CPM</th><th>Monthly Base</th></tr>`;
+    d.plans.forEach(p => {
+      const cfg = PLAN_CONFIG.find(c => c.key === p.name.toLowerCase());
+      html += `<tr><td>${p.name}</td><td>${p.minutes.toLocaleString()}</td><td>$0.08 x ${cfg.multiplier.toFixed(3)}</td><td>$${p.technufCPM.toFixed(4)}</td><td>$${n2(p.baseCost)}</td></tr>`;
+    });
+    html += `</table>`;
+
+    // Monthly Summary
+    html += `<h2>Monthly Package Summary</h2>
+<table><tr><th>Plan</th><th>Minutes</th><th>EL CPM</th><th>EL Base</th><th>Final Price</th><th>Sell $/min</th><th>Profit</th><th>Profit %</th></tr>`;
+    d.plans.forEach(p => {
+      html += `<tr><td>${p.name}</td><td>${p.minutes.toLocaleString()}</td><td>$${p.technufCPM.toFixed(4)}</td><td>$${n2(p.baseCost)}</td>
+<td><strong>$${Math.round(p.finalPrice).toLocaleString()}</strong></td><td>$${p.costPerMin.toFixed(4)}</td>
+<td class="profit">$${Math.round(p.profitAmount).toLocaleString()}</td><td class="profit">${p.profitPct.toFixed(1)}%</td></tr>`;
+    });
+    html += `</table>`;
+
+    // Annual Summary
+    html += `<h2>Annual Package Summary</h2>
+<table class="green-th"><tr><th>Plan</th><th>Annual Price</th><th>Monthly Equiv</th><th>Savings</th><th>Annual Profit</th><th>Profit % After Disc</th><th>$/min</th></tr>`;
+    d.plans.forEach(p => {
+      html += `<tr><td>${p.name}</td><td>$${Math.round(p.annual.discountedPrice).toLocaleString()}</td><td>$${Math.round(p.annual.monthlyEquiv).toLocaleString()}</td>
+<td>$${Math.round(p.annual.savings).toLocaleString()}</td><td class="profit">$${Math.round(p.annual.annualProfit).toLocaleString()}</td>
+<td class="profit">${p.annual.marginAfterDisc.toFixed(2)}%</td><td>$${p.annual.annualCPM.toFixed(4)}</td></tr>`;
+    });
+    html += `</table>`;
+
+    // Calculation Breakdown
+    html += `<h2>Calculation Breakdown</h2>`;
+    d.plans.forEach(p => {
+      const cfg = PLAN_CONFIG.find(c => c.key === p.name.toLowerCase());
+      html += `<h3>${p.name} (${p.minutes.toLocaleString()} min/mo)</h3><table>
+<tr><th>Step</th><th>Formula</th><th>Result</th></tr>
+<tr><td>1. EL Rate</td><td>$0.08 x ${cfg.multiplier.toFixed(3)}</td><td>$${p.technufCPM.toFixed(4)}/min</td></tr>
+<tr><td>2. Base Cost</td><td>$${p.technufCPM.toFixed(4)} x ${p.minutes.toLocaleString()}</td><td>$${n2(p.baseCost)}</td></tr>
+<tr><td>3. Total Cost</td><td>$${n2(p.baseCost)} + ($${n2(p.baseCost)} x ${d.overhead}%)</td><td>$${n2(p.totalCost)}</td></tr>
+<tr><td>4. Final Price</td><td>$${n2(p.totalCost)} / (1 - ${d.profitMargin}%)</td><td>$${n2(p.finalPrice)}</td></tr>
+<tr><td>5. Profit</td><td>$${n2(p.finalPrice)} - $${n2(p.totalCost)}</td><td class="profit">$${n2(p.profitAmount)} (${p.profitPct.toFixed(1)}%)</td></tr>
+<tr><td>6. Annual Price</td><td>$${n2(p.finalPrice)} x 12 x (1 - ${d.annualDiscount}%)</td><td>$${n2(p.annual.discountedPrice)}</td></tr>
+<tr><td>7. Annual Profit</td><td>$${n2(p.annual.discountedPrice)} - $${n2(p.annual.annualCost)}</td><td class="profit">$${n2(p.annual.annualProfit)} (${p.annual.marginAfterDisc.toFixed(2)}%)</td></tr>
+<tr><td>8. Sell $/min</td><td>$${n2(p.finalPrice)} / ${p.minutes.toLocaleString()}</td><td>$${p.costPerMin.toFixed(4)}</td></tr>
+</table>`;
+    });
+
+    html += `<br><p style="color:#999;font-size:9pt;">Generated by iConnect Quotation Tool</p></body></html>`;
+
+    const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${d.fileSlug}-iConnect-Quote.doc`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+</script>
+</body>
+</html>

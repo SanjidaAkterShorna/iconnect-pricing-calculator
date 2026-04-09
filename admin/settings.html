@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="icon-dark.png">
+<title>iConnect — Settings</title>
+<style>
+  :root, [data-theme="dark"] {
+    --bg:#0f0f1a;--card:#1a1a2e;--border:#2a2a40;--border-lt:#35355a;
+    --text:#e0e0e0;--text2:#9898bb;--muted:#555570;
+    --accent:#7c5cfc;--accent-lt:#a07fff;--green:#22c55e;--danger:#ef4444;--warn:#f59e0b;
+  }
+  [data-theme="light"] {
+    --bg:#f5f3fa;--card:#ffffff;--border:#e0d8f0;--border-lt:#cfc5e8;
+    --text:#1c1535;--text2:#44396a;--muted:#7a6fa0;
+    --accent:#6c3ce0;--accent-lt:#7c4ff0;--green:#0f8060;--danger:#d42020;--warn:#c07008;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+  nav img{height:36px;}
+  .nav-r{display:flex;gap:14px;align-items:center;}
+  .nav-r a{color:var(--text2);text-decoration:none;font-size:0.88rem;font-weight:500;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .2s;}
+  .nav-r a:hover{border-color:var(--accent);color:var(--text);}
+  .nav-r a.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .theme-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:16px;cursor:pointer;}
+
+  .container{max-width:1000px;margin:0 auto;padding:32px 24px;}
+  h1{font-size:1.5rem;font-weight:800;margin-bottom:4px;}
+  .subtitle{color:var(--text2);font-size:0.88rem;margin-bottom:28px;}
+
+  .tabs{display:flex;gap:4px;background:var(--card);padding:4px;border-radius:12px;margin-bottom:24px;border:1px solid var(--border);flex-wrap:wrap;}
+  .tab{flex:1;padding:10px 8px;text-align:center;border-radius:8px;cursor:pointer;font-size:0.84rem;font-weight:600;color:var(--muted);transition:all .2s;min-width:80px;}
+  .tab.active{background:var(--accent);color:#fff;}
+  .tab:hover:not(.active){color:var(--text2);}
+  .panel{display:none;}.panel.active{display:block;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
+  .card h3{font-size:1rem;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  @media(max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:0.78rem;color:var(--muted);margin-bottom:5px;font-weight:500;}
+  .field input,.field select,.field textarea{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;outline:none;font-family:inherit;}
+  .field input:focus,.field textarea:focus{border-color:var(--accent);}
+
+  .btn{padding:10px 20px;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all .2s;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-outline{background:transparent;border:1px solid var(--border-lt);color:var(--muted);}
+  .btn-sm{padding:6px 14px;font-size:0.78rem;}
+
+  .toggle{position:relative;width:40px;height:22px;display:inline-block;}
+  .toggle input{opacity:0;width:0;height:0;}
+  .toggle-slider{position:absolute;inset:0;background:#444;border-radius:22px;cursor:pointer;transition:.3s;}
+  .toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+  .toggle input:checked+.toggle-slider{background:var(--green);}
+  .toggle input:checked+.toggle-slider::before{transform:translateX(18px);}
+
+  .addon-row{display:grid;grid-template-columns:2fr 2fr 1fr 60px auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .addon-row input{padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.82rem;}
+
+  .save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:flex-end;gap:12px;transform:translateY(100%);transition:transform .3s;z-index:100;}
+  .save-bar.visible{transform:translateY(0);}
+  .save-bar .status{margin-right:auto;font-size:0.85rem;color:var(--warn);}
+
+  .toast{position:fixed;top:24px;right:24px;background:var(--green);color:#fff;padding:12px 24px;border-radius:8px;font-size:0.85rem;font-weight:500;opacity:0;transform:translateY(-10px);transition:all .3s;z-index:200;}
+  .toast.show{opacity:1;transform:translateY(0);}
+
+  .quote-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+  .quote-table th{text-align:left;padding:10px 12px;color:var(--muted);font-size:0.72rem;font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border);}
+  .quote-table td{padding:10px 12px;border-bottom:1px solid var(--border);}
+  .quote-table tr:hover td{background:rgba(255,255,255,0.02);}
+  .status-select{padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.78rem;}
+
+  footer{margin-top:80px;padding:24px;text-align:center;border-top:1px solid var(--border);}
+  footer p{color:var(--muted);font-size:0.82rem;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="calculator.html"><img class="nav-logo-img" src="logo-dark.png" alt="iConnect" /></a>
+  <div class="nav-r">
+    <a href="calculator.html">&larr; Back to Calculator</a>
+    <a href="calculator.html" class="primary">Calculator &rarr;</a>
+    <button class="theme-btn" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Settings & Configuration</h1>
+  <p class="subtitle">Manage pricing, plans, add-ons, carrier, branding, and view quote requests.</p>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="general" onclick="switchTab('general')">General</div>
+    <div class="tab" data-tab="plans" onclick="switchTab('plans')">Plans</div>
+    <div class="tab" data-tab="defaults" onclick="switchTab('defaults')">Defaults & Fees</div>
+    <div class="tab" data-tab="addons" onclick="switchTab('addons')">Add-ons</div>
+    <div class="tab" data-tab="branding" onclick="switchTab('branding')">Branding</div>
+    <div class="tab" data-tab="carrier" onclick="switchTab('carrier')">Carrier</div>
+    <div class="tab" data-tab="numact" onclick="switchTab('numact')">Number Activation</div>
+    <div class="tab" data-tab="quotes" onclick="switchTab('quotes')">Quotes</div>
+  </div>
+
+  <div class="panel active" id="p-general">
+    <div class="card"><h3>Base Rate</h3>
+      <div class="grid-2"><div class="field"><label>Technuf Enterprise Rate ($/min)</label><input type="number" step="0.001" id="cfg-enterpriseRate" oninput="setDirty(true)" /></div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-plans">
+    <div class="card"><h3>Pricing Plans</h3><div class="grid-3" id="plans-grid"></div></div>
+  </div>
+
+  <div class="panel" id="p-defaults">
+    <div class="card"><h3>Default Values</h3>
+      <div class="grid-2">
+        <div class="field"><label>Profit Margin (%)</label><input type="number" step="1" id="cfg-defaultProfitMargin" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Overhead (%)</label><input type="number" step="1" id="cfg-defaultOverhead" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Setup Fee ($)</label><input type="number" step="1" id="cfg-defaultSetupFee" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Overage Rate ($/min)</label><input type="number" step="0.01" id="cfg-defaultOverageRate" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Annual Discount (%)</label><input type="number" step="1" id="cfg-defaultAnnualDiscount" oninput="setDirty(true)" /></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-addons">
+    <div class="card"><h3>Monthly Add-ons</h3><div id="monthly-addons"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="addAddon('monthly')">+ Add Monthly</button>
+    </div>
+    <div class="card"><h3>One-Time Add-ons</h3><div id="onetime-addons"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="addAddon('one-time')">+ Add One-Time</button>
+    </div>
+  </div>
+
+  <div class="panel" id="p-branding">
+    <div class="card"><h3>Branding & Text</h3>
+      <div class="grid-2">
+        <div class="field"><label>Company Name</label><input type="text" id="cfg-companyName" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Powered By</label><input type="text" id="cfg-poweredBy" oninput="setDirty(true)" /></div>
+      </div>
+      <div class="field" style="margin-top:8px;"><label>Tagline</label><input type="text" id="cfg-tagline" oninput="setDirty(true)" /></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-carrier">
+    <div class="card"><h3>Phone Carrier Settings</h3>
+      <div class="grid-2">
+        <div class="field" style="display:flex;align-items:center;gap:10px;"><label style="margin:0;">Enable Carrier</label>
+          <label class="toggle"><input type="checkbox" id="cfg-carrier-enabled" onchange="setDirty(true)"><span class="toggle-slider"></span></label></div>
+        <div class="field" style="display:flex;align-items:center;gap:10px;"><label style="margin:0;">Show Breakdown to Client</label>
+          <label class="toggle"><input type="checkbox" id="cfg-carrier-showBreakdown" onchange="setDirty(true)"><span class="toggle-slider"></span></label></div>
+        <div class="field"><label>Markup (%)</label><input type="number" step="1" id="cfg-carrier-markupPct" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Setup Fee ($)</label><input type="number" step="1" id="cfg-carrier-setupFee" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Monthly Support Fee ($)</label><input type="number" step="1" id="cfg-carrier-supportFee" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Annual Discount (%)</label><input type="number" step="1" id="cfg-carrier-annualDiscount" oninput="setDirty(true)" /></div>
+      </div>
+    </div>
+    <div id="carrier-cards"></div>
+  </div>
+
+  <div class="panel" id="p-numact">
+    <div class="card"><h3>Number Activation (Pay Per Number)</h3>
+      <p style="color:var(--text2);font-size:0.82rem;margin-bottom:16px;">Allow clients to activate individual numbers without a full plan. Each number includes talk time.</p>
+      <div class="grid-2">
+        <div class="field" style="display:flex;align-items:center;gap:10px;"><label style="margin:0;">Enable Number Activation</label>
+          <label class="toggle"><input type="checkbox" id="cfg-na-enabled" onchange="setDirty(true)"><span class="toggle-slider"></span></label></div>
+        <div></div>
+        <div class="field"><label>Monthly Fee Per Number ($)</label><input type="number" step="1" min="0" id="cfg-na-feePerNumber" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Inbound Minutes Per Number (AI Agent)</label><input type="number" step="1" min="0" id="cfg-na-includedMinutes" oninput="setDirty(true)" />
+          <span style="font-size:0.72rem;color:var(--muted);">AI agent calling minutes per number</span></div>
+        <div class="field"><label>Outbound Minutes Per Number (Live Agent)</label><input type="number" step="1" min="0" id="cfg-na-outboundMinutes" oninput="setDirty(true)" />
+          <span style="font-size:0.72rem;color:var(--muted);">Live agent transfer minutes per number</span></div>
+        <div class="field"><label>Inbound Rate ($/min)</label><input type="number" step="0.0001" min="0" id="cfg-na-inboundRate" oninput="setDirty(true)" />
+          <span style="font-size:0.72rem;color:var(--muted);">Twilio inbound cost per minute</span></div>
+        <div class="field"><label>Outbound Rate ($/min)</label><input type="number" step="0.0001" min="0" id="cfg-na-outboundRate" oninput="setDirty(true)" />
+          <span style="font-size:0.72rem;color:var(--muted);">Twilio outbound cost per minute</span></div>
+        <div class="field"><label>Overage Rate ($/min)</label><input type="number" step="0.01" min="0" id="cfg-na-overageRate" oninput="setDirty(true)" />
+          <span style="font-size:0.72rem;color:var(--muted);">Charged for minutes beyond included</span></div>
+        <div class="field"><label>Annual Discount (%)</label><input type="number" step="1" min="0" max="99" id="cfg-na-annualDiscount" oninput="setDirty(true)" /></div>
+        <div class="field"><label>Setup Fee Per Number ($)</label><input type="number" step="1" min="0" id="cfg-na-setupFee" oninput="setDirty(true)" />
+          <span style="font-size:0.72rem;color:var(--muted);">One-time fee per number activation</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-quotes">
+    <div class="card"><h3>Quote Requests <span id="quote-count" style="color:var(--muted);font-weight:400;font-size:0.82rem;"></span></h3>
+      <div id="quotes-list"><p style="color:var(--muted);font-size:0.85rem;">Loading...</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="save-bar" id="save-bar">
+  <span class="status">Unsaved changes</span>
+  <button class="btn btn-outline btn-sm" onclick="loadConfig()">Discard</button>
+  <button class="btn btn-primary btn-sm" onclick="saveConfig()">Save Changes</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<footer>
+  <p style="display:flex;align-items:center;justify-content:center;gap:8px;">Powered by <img class="technuf-logo-img" src="technuf-logo-dark.png" alt="Technuf" style="height:20px;"></p>
+</footer>
+
+<script src="../data/static-config.js"></script>
+<script>
+let config = null;
+let dirty = false;
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
+  document.querySelectorAll('.panel').forEach(el => el.classList.toggle('active', el.id === 'p-' + t));
+}
+function setDirty(v) { dirty = v; document.getElementById('save-bar').classList.toggle('visible', v); }
+function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+
+async function loadConfig() {
+  config = await loadStaticConfig();
+  render();
+  setDirty(false);
+}
+
+function render() {
+  document.getElementById('cfg-enterpriseRate').value = config.enterpriseRate;
+  document.getElementById('cfg-defaultProfitMargin').value = config.defaultProfitMargin;
+  document.getElementById('cfg-defaultOverhead').value = config.defaultOverhead;
+  document.getElementById('cfg-defaultSetupFee').value = config.defaultSetupFee;
+  document.getElementById('cfg-defaultOverageRate').value = config.defaultOverageRate;
+  document.getElementById('cfg-defaultAnnualDiscount').value = config.defaultAnnualDiscount;
+  document.getElementById('cfg-companyName').value = config.companyName || '';
+  document.getElementById('cfg-tagline').value = config.tagline || '';
+  document.getElementById('cfg-poweredBy').value = config.poweredBy || '';
+  renderPlans(); renderAddons(); renderCarrier(); renderNumActivation();
+}
+
+function renderPlans() {
+  document.getElementById('plans-grid').innerHTML = config.plans.map((p, i) => {
+    const feats = (p.features||[]).join('\n');
+    return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><strong>${p.name}</strong>
+        <label class="toggle"><input type="checkbox" ${p.enabled?'checked':''} data-pi="${i}" data-pf="enabled" onchange="setDirty(true)"><span class="toggle-slider"></span></label></div>
+      <div class="field"><label>Name</label><input value="${p.name}" data-pi="${i}" data-pf="name" oninput="setDirty(true)" /></div>
+      <div class="field"><label>Minutes (Inbound/AI)</label><input type="number" value="${p.minutes}" data-pi="${i}" data-pf="minutes" oninput="setDirty(true)" /></div>
+      <div class="field"><label>Outbound Minutes (Live Agent)</label><input type="number" value="${p.outboundMinutes||0}" data-pi="${i}" data-pf="outboundMinutes" oninput="setDirty(true)" /></div>
+      <div class="field"><label>Multiplier</label><input type="number" step="0.001" value="${p.multiplier}" data-pi="${i}" data-pf="multiplier" oninput="setDirty(true)" /></div>
+      <div class="field" style="display:flex;align-items:center;gap:8px;"><label style="margin:0;">Popular</label>
+        <label class="toggle"><input type="checkbox" ${p.popular?'checked':''} data-pi="${i}" data-pf="popular" onchange="setDirty(true)"><span class="toggle-slider"></span></label></div>
+      <div class="field"><label>Features (one per line)</label><textarea data-pi="${i}" data-pf="features" oninput="setDirty(true)" style="min-height:100px;resize:vertical;">${feats}</textarea></div>
+    </div>`;
+  }).join('');
+}
+
+function renderAddons() {
+  const mo = config.addOns.filter(a => a.type === 'monthly');
+  const ot = config.addOns.filter(a => a.type === 'one-time');
+  document.getElementById('monthly-addons').innerHTML = mo.map(a => addonRow(a, config.addOns.indexOf(a))).join('');
+  document.getElementById('onetime-addons').innerHTML = ot.map(a => addonRow(a, config.addOns.indexOf(a))).join('');
+}
+function addonRow(a, idx) {
+  return `<div class="addon-row">
+    <input value="${a.name}" data-ai="${idx}" data-af="name" oninput="setDirty(true)" placeholder="Name" />
+    <input value="${a.desc||''}" data-ai="${idx}" data-af="desc" oninput="setDirty(true)" placeholder="Description" />
+    <input type="number" value="${a.price}" data-ai="${idx}" data-af="price" oninput="setDirty(true)" placeholder="Price" />
+    <input value="${a.icon||''}" data-ai="${idx}" data-af="icon" oninput="setDirty(true)" placeholder="Icon" style="width:50px;" />
+    <button class="btn btn-danger btn-sm" onclick="removeAddon(${idx})">X</button>
+  </div>`;
+}
+function addAddon(type) { config.addOns.push({id:'addon_'+Date.now(),name:'',desc:'',price:0,type,icon:'⚡'}); renderAddons(); setDirty(true); }
+function removeAddon(idx) { config.addOns.splice(idx,1); renderAddons(); setDirty(true); }
+
+function renderCarrier() {
+  const cp = config.carrierPricing || {};
+  document.getElementById('cfg-carrier-enabled').checked = cp.enabled||false;
+  document.getElementById('cfg-carrier-showBreakdown').checked = cp.showBreakdown!==false;
+  document.getElementById('cfg-carrier-markupPct').value = cp.defaultMarkupPct||20;
+  document.getElementById('cfg-carrier-setupFee').value = cp.defaultSetupFee||0;
+  document.getElementById('cfg-carrier-supportFee').value = cp.defaultSupportFee||0;
+  document.getElementById('cfg-carrier-annualDiscount').value = cp.defaultAnnualDiscount||15;
+  document.getElementById('carrier-cards').innerHTML = (cp.carriers||[]).map((c,ci) =>
+    `<div class="card"><h3>${c.name} Rates</h3>${(c.numberTypes||[]).map((t,ti) =>
+      `<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;">
+        <div style="font-weight:600;margin-bottom:10px;">${t.name}</div>
+        <div class="grid-3">
+          <div class="field"><label>Inbound $/min</label><input type="number" step="0.0001" value="${t.inboundPerMin}" data-ci="${ci}" data-ti="${ti}" data-cf="inboundPerMin" oninput="setDirty(true)" /></div>
+          <div class="field"><label>Outbound $/min</label><input type="number" step="0.0001" value="${t.outboundPerMin}" data-ci="${ci}" data-ti="${ti}" data-cf="outboundPerMin" oninput="setDirty(true)" /></div>
+          <div class="field"><label>Number $/month</label><input type="number" step="0.01" value="${t.numberMonthly}" data-ci="${ci}" data-ti="${ti}" data-cf="numberMonthly" oninput="setDirty(true)" /></div>
+        </div></div>`).join('')}</div>`
+  ).join('');
+}
+
+function renderNumActivation() {
+  const na = config.numberActivation || {};
+  document.getElementById('cfg-na-enabled').checked = na.enabled || false;
+  document.getElementById('cfg-na-feePerNumber').value = na.feePerNumber || 25;
+  document.getElementById('cfg-na-includedMinutes').value = na.includedMinutes || 250;
+  document.getElementById('cfg-na-outboundMinutes').value = na.outboundMinutes || 0;
+  document.getElementById('cfg-na-inboundRate').value = na.inboundRate || 0.0085;
+  document.getElementById('cfg-na-outboundRate').value = na.outboundRate || 0.014;
+  document.getElementById('cfg-na-overageRate').value = na.overageRate || 0.05;
+  document.getElementById('cfg-na-annualDiscount').value = na.annualDiscount || 15;
+  document.getElementById('cfg-na-setupFee').value = na.setupFee || 0;
+}
+
+function gather() {
+  config.enterpriseRate = parseFloat(document.getElementById('cfg-enterpriseRate').value)||0.08;
+  config.defaultProfitMargin = parseFloat(document.getElementById('cfg-defaultProfitMargin').value)||60;
+  config.defaultOverhead = parseFloat(document.getElementById('cfg-defaultOverhead').value)||15;
+  config.defaultSetupFee = parseFloat(document.getElementById('cfg-defaultSetupFee').value)||499;
+  config.defaultOverageRate = parseFloat(document.getElementById('cfg-defaultOverageRate').value)||0.05;
+  config.defaultAnnualDiscount = parseFloat(document.getElementById('cfg-defaultAnnualDiscount').value)||15;
+  config.companyName = document.getElementById('cfg-companyName').value;
+  config.tagline = document.getElementById('cfg-tagline').value;
+  config.poweredBy = document.getElementById('cfg-poweredBy').value;
+  document.querySelectorAll('[data-pi]').forEach(el => {
+    const i=parseInt(el.dataset.pi), f=el.dataset.pf;
+    if(f==='enabled'||f==='popular') config.plans[i][f]=el.checked;
+    else if(f==='minutes'||f==='multiplier'||f==='outboundMinutes') config.plans[i][f]=parseFloat(el.value)||0;
+    else if(f==='features') config.plans[i].features=el.value.split('\n').map(s=>s.trim()).filter(Boolean);
+    else config.plans[i][f]=el.value;
+  });
+  document.querySelectorAll('[data-ai]').forEach(el => {
+    const i=parseInt(el.dataset.ai), f=el.dataset.af;
+    config.addOns[i][f] = f==='price' ? (parseFloat(el.value)||0) : el.value;
+  });
+  if(!config.carrierPricing) config.carrierPricing={};
+  config.carrierPricing.enabled = document.getElementById('cfg-carrier-enabled').checked;
+  config.carrierPricing.showBreakdown = document.getElementById('cfg-carrier-showBreakdown').checked;
+  config.carrierPricing.defaultMarkupPct = parseFloat(document.getElementById('cfg-carrier-markupPct').value)||0;
+  config.carrierPricing.defaultSetupFee = parseFloat(document.getElementById('cfg-carrier-setupFee').value)||0;
+  config.carrierPricing.defaultSupportFee = parseFloat(document.getElementById('cfg-carrier-supportFee').value)||0;
+  config.carrierPricing.defaultAnnualDiscount = parseFloat(document.getElementById('cfg-carrier-annualDiscount').value)||15;
+  document.querySelectorAll('[data-ci][data-ti][data-cf]').forEach(el => {
+    const ci=parseInt(el.dataset.ci),ti=parseInt(el.dataset.ti),f=el.dataset.cf;
+    if(config.carrierPricing.carriers[ci]&&config.carrierPricing.carriers[ci].numberTypes[ti])
+      config.carrierPricing.carriers[ci].numberTypes[ti][f]=parseFloat(el.value)||0;
+  });
+  // Number Activation
+  if(!config.numberActivation) config.numberActivation={};
+  config.numberActivation.enabled = document.getElementById('cfg-na-enabled').checked;
+  config.numberActivation.feePerNumber = parseFloat(document.getElementById('cfg-na-feePerNumber').value)||25;
+  config.numberActivation.includedMinutes = parseFloat(document.getElementById('cfg-na-includedMinutes').value)||250;
+  config.numberActivation.outboundMinutes = parseFloat(document.getElementById('cfg-na-outboundMinutes').value)||0;
+  config.numberActivation.inboundRate = parseFloat(document.getElementById('cfg-na-inboundRate').value)||0.0085;
+  config.numberActivation.outboundRate = parseFloat(document.getElementById('cfg-na-outboundRate').value)||0.014;
+  config.numberActivation.overageRate = parseFloat(document.getElementById('cfg-na-overageRate').value)||0.05;
+  config.numberActivation.annualDiscount = parseFloat(document.getElementById('cfg-na-annualDiscount').value)||15;
+  config.numberActivation.setupFee = parseFloat(document.getElementById('cfg-na-setupFee').value)||0;
+}
+
+async function saveConfig() {
+  gather();
+  try {
+    config = saveStaticConfig(config);
+    render(); setDirty(false); showToast('Settings saved!');
+  } catch { showToast('Failed to save'); }
+}
+
+function loadQuotesView() {
+  try {
+    const quotes = loadQuotes();
+    document.getElementById('quote-count').textContent = '('+quotes.length+')';
+    if(!quotes.length) { document.getElementById('quotes-list').innerHTML='<p style="color:var(--muted);">No quotes yet.</p>'; return; }
+    const fmt=v=>'$'+Math.round(v).toLocaleString();
+    document.getElementById('quotes-list').innerHTML = `<table class="quote-table"><thead><tr><th>Contact</th><th>Plan</th><th>Price</th><th>Status</th><th>Date</th></tr></thead><tbody>${quotes.map(q => {
+      const d=new Date(q.createdAt).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+      return `<tr><td><strong>${q.clientName||''}</strong><br>${q.clientEmail||''}</td><td>${q.planName||'—'}</td><td>${fmt(q.monthlyTotal||0)}/mo</td>
+      <td><select class="status-select" onchange="updateQuoteStatus_('${q._id}',this.value)"><option value="new" ${q.status==='new'?'selected':''}>New</option><option value="contacted" ${q.status==='contacted'?'selected':''}>Contacted</option><option value="converted" ${q.status==='converted'?'selected':''}>Converted</option><option value="closed" ${q.status==='closed'?'selected':''}>Closed</option></select></td><td>${d}</td></tr>`;
+    }).join('')}</tbody></table>`;
+  } catch { document.getElementById('quotes-list').innerHTML='<p style="color:var(--danger);">Failed to load.</p>'; }
+}
+
+function updateQuoteStatus_(id, status) {
+  updateQuoteStatus(id, status);
+  showToast('Quote updated');
+}
+
+// Theme
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const t = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('theme', t);
+  applyTheme(t);
+}
+function applyTheme(t) {
+  const d = t === 'dark';
+  document.querySelectorAll('.nav-logo-img').forEach(i => i.src = d ? 'logo-dark.png' : 'logo-light.png');
+  document.querySelectorAll('.technuf-logo-img').forEach(i => i.src = d ? 'technuf-logo-dark.png' : 'technuf-logo-light.jpg');
+  document.getElementById('themeToggle').innerHTML = d ? '&#9790;' : '&#9728;';
+  const fav = document.querySelector('link[rel="icon"]');
+  if (fav) fav.href = d ? 'icon-dark.png' : 'icon-light.png';
+}
+(function(){ const s=localStorage.getItem('theme')||'dark'; document.documentElement.setAttribute('data-theme',s); applyTheme(s); })();
+
+loadConfig();
+loadQuotesView();
+</script>
+</body>
+</html>

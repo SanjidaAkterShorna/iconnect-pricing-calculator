@@ -1,0 +1,231 @@
+{
+  "enterpriseRate": 0.08,
+  "plans": [
+    {
+      "key": "payasyougo",
+      "name": "Pay As You Go",
+      "minutes": 200,
+      "outboundMinutes": 100,
+      "multiplier": 1.1,
+      "enabled": true,
+      "popular": false,
+      "features": [
+        "100 AI calling minutes/mo",
+        "1 AI agent",
+        "Basic call routing",
+        "Call recording",
+        "Email support",
+        "Pay only for what you use"
+      ]
+    },
+    {
+      "key": "starter",
+      "name": "Starter",
+      "minutes": 1000,
+      "outboundMinutes": 1000,
+      "multiplier": 1.05,
+      "enabled": true,
+      "popular": false,
+      "features": [
+        "500 AI calling minutes/mo",
+        "2 AI agents",
+        "Basic CRM sync",
+        "Call recording & transcripts",
+        "Email support",
+        "Standard voice library"
+      ]
+    },
+    {
+      "key": "growth",
+      "name": "Growth",
+      "minutes": 3000,
+      "outboundMinutes": 1500,
+      "multiplier": 1.025,
+      "enabled": true,
+      "popular": true,
+      "features": [
+        "1,000 AI calling minutes/mo",
+        "5 AI agents",
+        "Advanced CRM integration",
+        "Real-time analytics dashboard",
+        "Priority support (4hr SLA)",
+        "Custom voice cloning",
+        "A/B script testing",
+        "Webhook & API access"
+      ]
+    },
+    {
+      "key": "enterprise",
+      "name": "Enterprise",
+      "minutes": 5000,
+      "outboundMinutes": 5000,
+      "multiplier": 1,
+      "enabled": true,
+      "popular": false,
+      "features": [
+        "5,000 AI calling minutes/mo",
+        "Unlimited AI agents",
+        "Full CRM + ERP integration",
+        "Dedicated account manager",
+        "Custom AI model training",
+        "White-label option",
+        "SLA guarantee (99.9%)",
+        "SSO & compliance (SOC2)",
+        "Quarterly business reviews"
+      ]
+    },
+    {
+      "key": "custom",
+      "name": "Custom",
+      "minutes": 0,
+      "multiplier": 0,
+      "enabled": true,
+      "popular": false,
+      "isCustom": true,
+      "features": [
+        "Custom AI calling minutes",
+        "Unlimited AI agents",
+        "Custom integrations & API",
+        "Dedicated onboarding specialist",
+        "Custom AI model training",
+        "White-label branding",
+        "Volume-based discounts",
+        "Dedicated account manager",
+        "24/7 premium support",
+        "Custom SLA & compliance"
+      ],
+      "outboundMinutes": 0
+    }
+  ],
+  "defaultProfitMargin": 50,
+  "defaultOverhead": 15,
+  "defaultSetupFee": 499,
+  "defaultOverageRate": 0.05,
+  "defaultAnnualDiscount": 15,
+  "addOns": [
+    {
+      "id": "crm",
+      "name": "CRM Integration",
+      "desc": "Auto-sync contacts and call outcomes to HubSpot, Salesforce, or GoHighLevel.",
+      "price": 49,
+      "type": "monthly",
+      "icon": "🔗"
+    },
+    {
+      "id": "analytics",
+      "name": "Analytics Dashboard",
+      "desc": "Real-time call metrics, conversion rates, and agent performance insights.",
+      "price": 29,
+      "type": "monthly",
+      "icon": "📊"
+    },
+    {
+      "id": "api",
+      "name": "API Access",
+      "desc": "Full REST API to integrate iConnect data with your own tools and workflows.",
+      "price": 79,
+      "type": "monthly",
+      "icon": "⚙️"
+    },
+    {
+      "id": "support",
+      "name": "Priority Support",
+      "desc": "Jump to the front of the queue with a guaranteed 4-hour response SLA.",
+      "price": 39,
+      "type": "monthly",
+      "icon": "🛡️"
+    },
+    {
+      "id": "manager",
+      "name": "Dedicated Account Manager",
+      "desc": "A certified success manager to review campaigns and optimize strategy monthly.",
+      "price": 199,
+      "type": "monthly",
+      "icon": "👤"
+    },
+    {
+      "id": "voice",
+      "name": "Custom Voice & Script Setup",
+      "desc": "Professional voice selection and script writing by our AI content specialists.",
+      "price": 299,
+      "type": "one-time",
+      "icon": "🎙️"
+    },
+    {
+      "id": "whitelabel",
+      "name": "White-Label Branding",
+      "desc": "Remove iConnect branding and deploy under your own brand identity.",
+      "price": 499,
+      "type": "one-time",
+      "icon": "🏷️"
+    },
+    {
+      "id": "onboarding",
+      "name": "Dedicated Onboarding Session",
+      "desc": "Live 1-on-1 onboarding call with a certified implementation engineer.",
+      "price": 399,
+      "type": "one-time",
+      "icon": "🎓"
+    },
+    {
+      "id": "custom",
+      "name": "Custom Integration Build",
+      "desc": "We build a custom integration with any tool in your tech stack — any API.",
+      "price": 699,
+      "type": "one-time",
+      "icon": "🔧"
+    }
+  ],
+  "companyName": "iConnect",
+  "tagline": "AI Calling Agents That Close Deals While You Sleep",
+  "poweredBy": "Powered by Technuf",
+  "carrierPricing": {
+    "enabled": true,
+    "showBreakdown": true,
+    "defaultMarkupPct": 50,
+    "defaultSetupFee": 18,
+    "defaultSupportFee": 25,
+    "defaultAnnualDiscount": 10,
+    "carriers": [
+      {
+        "id": "twilio",
+        "name": "Twilio",
+        "enabled": true,
+        "numberTypes": [
+          {
+            "id": "local",
+            "name": "Local Number",
+            "inboundPerMin": 0.0085,
+            "outboundPerMin": 0.014,
+            "numberMonthly": 1.15
+          },
+          {
+            "id": "tollfree",
+            "name": "Toll-Free Number",
+            "inboundPerMin": 0.022,
+            "outboundPerMin": 0.014,
+            "numberMonthly": 2.15
+          }
+        ]
+      }
+    ]
+  },
+  "activationFee": {
+    "enabled": true,
+    "feePerNumber": 50,
+    "minutesPerDollar": 5,
+    "annualDiscount": 15,
+    "overageRate": 0.15
+  },
+  "numberActivation": {
+    "enabled": true,
+    "feePerNumber": 25,
+    "includedMinutes": 200,
+    "outboundMinutes": 50,
+    "inboundRate": 0.0085,
+    "outboundRate": 0.014,
+    "overageRate": 0.15,
+    "annualDiscount": 10,
+    "setupFee": 10
+  }
+}

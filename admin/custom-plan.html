@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="icon-dark.png">
+  <title>iConnect – Custom Plan Builder</title>
+  <script src="../data/static-config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary:#08080f;--bg-secondary:#0f0f1a;--bg-card:#13131e;
+  --border:#252538;--border-light:#35355a;
+  --text-primary:#eeeeff;--text-secondary:#9898bb;--text-muted:#555570;
+  --accent:#7c5cfc;--accent-light:#a07fff;--accent-glow:rgba(124,92,252,0.25);
+  --success:#22e87a;--warning:#ffb400;
+  --gradient:linear-gradient(135deg,#7c5cfc 0%,#00d4ff 100%);
+  --r-sm:8px;--r-md:16px;--r-lg:24px;--ease:0.28s ease;
+}
+[data-theme="light"] {
+  --bg-primary:#f5f3fa;--bg-secondary:#ede9f5;--bg-card:#ffffff;
+  --border:#e0d8f0;--border-light:#cfc5e8;
+  --text-primary:#1c1535;--text-secondary:#44396a;--text-muted:#7a6fa0;
+  --accent:#6c3ce0;--accent-light:#7c4ff0;--accent-glow:rgba(108,60,224,0.12);
+  --success:#0f8060;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.65;}
+
+/* Nav */
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:14px 32px;background:rgba(8,8,15,0.85);border-bottom:1px solid var(--border);backdrop-filter:blur(16px);}
+[data-theme="light"] nav{background:rgba(255,255,255,0.92);}
+.nav-logo{display:flex;align-items:center;text-decoration:none;}
+.nav-logo img{height:36px;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.btn{padding:8px 16px;border-radius:var(--r-sm);font-size:0.82rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid var(--border);color:var(--text-secondary);background:transparent;transition:all var(--ease);}
+.btn:hover{border-color:var(--accent);color:var(--text-primary);}
+.btn-primary{background:var(--gradient);color:#fff;border:none;}
+.theme-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-size:16px;cursor:pointer;}
+
+/* Layout */
+.page{max-width:100%;padding:32px;display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start;}
+@media(max-width:1100px){.page{grid-template-columns:1fr;}}
+.page-title{font-size:1.4rem;font-weight:900;margin-bottom:4px;}
+.page-subtitle{color:var(--text-secondary);font-size:0.88rem;margin-bottom:24px;}
+
+/* Cards */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:20px;}
+.card h3{font-size:0.95rem;font-weight:800;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
+.field label{display:block;font-size:0.72rem;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;}
+.field input,.field select{width:100%;padding:10px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-primary);font-size:0.88rem;font-family:inherit;outline:none;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.field .hint{font-size:0.68rem;color:var(--text-muted);margin-top:3px;display:block;}
+
+/* Section card with toggle */
+.section-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px;}
+.section-card-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(124,92,252,0.06) 0%,rgba(0,212,255,0.04) 100%);}
+.section-card-header-left{display:flex;align-items:center;gap:12px;}
+.section-card-icon{width:40px;height:40px;border-radius:10px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 16px var(--accent-glow);}
+.section-card-title{font-size:0.95rem;font-weight:800;}
+.section-card-subtitle{color:var(--text-secondary);font-size:0.75rem;}
+.section-card-toggle{display:flex;align-items:center;gap:10px;}
+.toggle-label{font-size:0.75rem;font-weight:700;padding:3px 10px;border-radius:100px;background:rgba(124,92,252,0.1);color:var(--accent-light);transition:all .3s;}
+.toggle-label.on{background:rgba(34,232,122,0.12);color:var(--success);}
+.toggle-switch{width:48px;height:26px;background:var(--border);border-radius:26px;position:relative;cursor:pointer;transition:background .3s;flex-shrink:0;}
+.toggle-switch.on{background:var(--accent);}
+.toggle-switch::after{content:'';width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform .3s;}
+.toggle-switch.on::after{transform:translateX(22px);}
+.section-card-body{padding:24px;}
+
+/* Add-on cards */
+.addon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;}
+.addon-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s;}
+.addon-card:hover{border-color:var(--accent);}
+.addon-card.selected{border-color:var(--accent);background:rgba(124,92,252,0.06);}
+.addon-left{display:flex;align-items:center;gap:10px;}
+.addon-icon{font-size:1.1rem;}
+.addon-name{font-size:0.85rem;font-weight:700;}
+.addon-desc{font-size:0.7rem;color:var(--text-muted);}
+.addon-price{font-size:0.9rem;font-weight:800;color:var(--accent-light);white-space:nowrap;}
+
+/* Profit highlight */
+.profit-box{background:linear-gradient(135deg,rgba(34,232,122,0.10) 0%,rgba(0,212,255,0.08) 100%);border:1px solid rgba(34,232,122,0.25);border-radius:12px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center;margin-bottom:16px;}
+.profit-box .pv{font-size:1.5rem;font-weight:900;color:var(--success);line-height:1.15;}
+.profit-box .pv.pct{background:linear-gradient(135deg,#22e87a,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.profit-box .pl{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-top:3px;}
+
+/* Metrics row */
+.metrics-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;margin-bottom:16px;}
+.metrics-row .mv{font-size:1rem;font-weight:800;color:var(--accent-light);}
+.metrics-row .ml{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);margin-top:2px;}
+
+/* Summary sidebar */
+.summary-sidebar{position:sticky;top:80px;}
+.summary-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.summary-header{padding:20px 24px;background:linear-gradient(135deg,rgba(124,92,252,0.08) 0%,rgba(0,212,255,0.05) 100%);border-bottom:1px solid var(--border);}
+.summary-header h3{font-size:1rem;font-weight:800;margin:0;}
+.summary-body{padding:20px 24px;}
+.summary-row{display:flex;justify-content:space-between;padding:8px 0;font-size:0.85rem;}
+.summary-row.total{border-top:2px solid var(--border);margin-top:8px;padding-top:12px;font-weight:800;font-size:1rem;}
+.summary-row .sr-label{color:var(--text-secondary);}
+.summary-row .sr-value{font-weight:700;}
+.summary-row.total .sr-value{color:var(--success);font-size:1.1rem;}
+.summary-row.profit .sr-value{color:var(--success);}
+.summary-row.onetime .sr-label{color:var(--text-muted);font-size:0.8rem;}
+.summary-row.onetime .sr-value{font-size:0.8rem;}
+.summary-section-label{font-size:0.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin:12px 0 4px;padding-top:10px;border-top:1px solid var(--border);}
+.summary-section-label:first-child{border-top:none;margin-top:0;padding-top:0;}
+
+/* Annual toggle in summary */
+.billing-toggle{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--bg-secondary);border-top:1px solid var(--border);}
+.billing-toggle span{font-size:0.78rem;font-weight:600;color:var(--text-muted);}
+.billing-toggle span.active{color:var(--text-primary);}
+
+/* Export button */
+.export-btn{width:100%;padding:14px;border:none;border-radius:var(--r-sm);font-size:0.9rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:12px;}
+.export-btn-primary{background:var(--gradient);color:#fff;box-shadow:0 4px 20px var(--accent-glow);}
+.export-btn-primary:hover{box-shadow:0 8px 30px var(--accent-glow);}
+.export-btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-secondary);margin-top:8px;}
+.export-btn-outline:hover{border-color:var(--accent);color:var(--accent-light);}
+
+.export-group{margin-top:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-md);padding:16px;overflow:hidden;}
+.export-group-label{font-size:0.78rem;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.export-group-label span{font-weight:500;color:var(--text-muted);font-size:0.7rem;}
+.export-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.export-btns .export-btn{margin:0;padding:10px 8px;font-size:0.78rem;}
+
+/* Carrier config */
+.carrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:16px;}
+
+/* Footer */
+footer{margin-top:40px;padding:24px;text-align:center;border-top:1px solid var(--border);}
+footer p{color:var(--text-muted);font-size:0.82rem;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="calculator.html" class="nav-logo">
+    <img class="nav-logo-img" src="logo-dark.png" alt="iConnect" />
+  </a>
+  <div class="nav-right">
+    <a href="calculator.html" class="btn">&larr; Back to Calculator</a>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">&#9790;</button>
+    <a href="settings.html" class="btn">Settings</a>
+  </div>
+</nav>
+
+<div class="page">
+  <!-- LEFT COLUMN: Configuration -->
+  <div class="left-col">
+    <h1 class="page-title">Custom Plan Builder</h1>
+    <p class="page-subtitle">Build a fully customized pricing package for your client. All fields are adjustable.</p>
+
+    <!-- Client Info -->
+    <div class="card">
+      <h3>Client Information</h3>
+      <div class="form-grid">
+        <div class="field"><label>Company Name</label><input type="text" id="clientName" placeholder="Acme Corp"></div>
+        <div class="field"><label>Contact Person</label><input type="text" id="contactPerson" placeholder="John Smith"></div>
+        <div class="field"><label>Email</label><input type="email" id="clientEmail" placeholder="john@acme.com"></div>
+        <div class="field"><label>Date</label><input type="date" id="quoteDate"></div>
+        <div class="field"><label>Prepared By</label><input type="text" id="preparedBy" placeholder="Your Name"></div>
+      </div>
+    </div>
+
+    <!-- Plan Configuration -->
+    <div class="card">
+      <h3>Plan Configuration</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>Custom Minutes / Month</label>
+          <input type="number" id="customMinutes" value="15000" min="1" step="100">
+        </div>
+        <div class="field">
+          <label>Base Rate ($/min)</label>
+          <input type="number" id="customRate" value="0.08" min="0" step="0.001">
+          <span class="hint">Technuf enterprise rate</span>
+        </div>
+        <div class="field">
+          <label>Rate Multiplier</label>
+          <input type="number" id="customMultiplier" value="1.0" min="0" step="0.01">
+          <span class="hint">1.0 = no premium</span>
+        </div>
+        <div class="field">
+          <label>Profit Margin (%)</label>
+          <input type="number" id="customMargin" value="50" min="0" max="99" step="1">
+        </div>
+        <div class="field">
+          <label>Overhead (%)</label>
+          <input type="number" id="customOverhead" value="15" min="0" step="1">
+        </div>
+        <div class="field">
+          <label>Setup Fee ($)</label>
+          <input type="number" id="customSetupFee" value="499" min="0" step="1">
+        </div>
+        <div class="field">
+          <label>Overage Rate ($/min)</label>
+          <input type="number" id="customOverage" value="0.05" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Annual Discount (%)</label>
+          <input type="number" id="customAnnDisc" value="15" min="0" max="99" step="1">
+        </div>
+      </div>
+
+      <!-- Live pricing result -->
+      <div style="margin-top:20px;">
+        <div class="profit-box">
+          <div><div class="pv" id="cpProfit">$0</div><div class="pl">Monthly Profit</div></div>
+          <div><div class="pv pct" id="cpMargin">0%</div><div class="pl">Profit Margin</div></div>
+        </div>
+        <div class="metrics-row">
+          <div><div class="mv" id="cpSellCPM">$0</div><div class="ml">Sell Price / min</div></div>
+          <div><div class="mv" id="cpCostCPM">$0</div><div class="ml">Technuf Cost / min</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add-Ons -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-header-left">
+          <div class="section-card-icon">&#9889;</div>
+          <div>
+            <div class="section-card-title">Add-Ons</div>
+            <div class="section-card-subtitle">Select optional add-ons for this client</div>
+          </div>
+        </div>
+        <div class="section-card-toggle">
+          <span class="toggle-label" id="addonsLabel">OFF</span>
+          <div class="toggle-switch" id="addonsToggle" onclick="toggleAddons()"></div>
+        </div>
+      </div>
+      <div id="addonsBody" style="display:none;">
+        <div class="section-card-body">
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">Monthly Add-Ons</div>
+          <div class="addon-grid" id="monthlyAddonsGrid"></div>
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin:16px 0 10px;">One-Time Add-Ons</div>
+          <div class="addon-grid" id="onetimeAddonsGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone Carrier -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-header-left">
+          <div class="section-card-icon">&#128222;</div>
+          <div>
+            <div class="section-card-title">Phone Carrier</div>
+            <div class="section-card-subtitle">Add dedicated phone numbers for AI calling</div>
+          </div>
+        </div>
+        <div class="section-card-toggle">
+          <span class="toggle-label" id="carrierLabel">OFF</span>
+          <div class="toggle-switch" id="carrierToggle" onclick="toggleCarrier()"></div>
+        </div>
+      </div>
+      <div id="carrierBody" style="display:none;">
+        <div class="section-card-body">
+          <div class="carrier-grid">
+            <div class="field"><label>Carrier</label><select id="carrierSelect"></select></div>
+            <div class="field"><label>Number Type</label><select id="numberTypeSelect"></select></div>
+            <div class="field"><label>Phone Count</label><input type="number" id="phoneCount" value="1" min="1"></div>
+            <div class="field"><label>Est. Inbound Min/mo</label><input type="number" id="inboundMin" value="500" min="0"></div>
+            <div class="field"><label>Est. Outbound Min/mo</label><input type="number" id="outboundMin" value="500" min="0"></div>
+            <div class="field"><label>Markup (%)</label><input type="number" id="carrierMarkup" value="20" min="0"></div>
+            <div class="field"><label>Support Fee ($/mo)</label><input type="number" id="carrierSupport" value="25" min="0"></div>
+            <div class="field"><label>Carrier Setup Fee ($)</label><input type="number" id="carrierSetup" value="50" min="0"></div>
+          </div>
+          <div class="profit-box" id="carrierProfit" style="margin-top:8px;">
+            <div><div class="pv" id="ccProfit">$0</div><div class="pl">Carrier Profit/mo</div></div>
+            <div><div class="pv pct" id="ccMargin">0%</div><div class="pl">Carrier Margin</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Summary Sidebar -->
+  <div class="summary-sidebar">
+    <div class="summary-card">
+      <div class="summary-header"><h3>Quote Summary</h3></div>
+      <div class="summary-body" id="summaryBody">
+        <!-- Filled by JS -->
+      </div>
+      <div class="billing-toggle">
+        <span id="lblMonthly" class="active">Monthly</span>
+        <div class="toggle-switch" id="billingToggle" onclick="toggleBilling()" style="width:42px;height:22px;"></div>
+        <span id="lblAnnual">Annual</span>
+      </div>
+    </div>
+
+    <!-- Admin Invoice (includes profit, margin, cost breakdown) -->
+    <div class="export-group">
+      <div class="export-group-label">Admin Invoice <span>(with profit & cost data)</span></div>
+      <div class="export-btns">
+        <button class="export-btn export-btn-primary" onclick="exportPDF('admin')">&#128196; PDF</button>
+        <button class="export-btn export-btn-primary" onclick="exportExcel('admin')">&#128202; Excel</button>
+        <button class="export-btn export-btn-primary" onclick="exportDOC('admin')">&#128221; Word</button>
+      </div>
+    </div>
+
+    <!-- Client Invoice (clean, no internal costs) -->
+    <div class="export-group">
+      <div class="export-group-label">Client Invoice <span>(clean, no internal data)</span></div>
+      <div class="export-btns">
+        <button class="export-btn export-btn-outline" onclick="exportPDF('client')">&#128196; PDF</button>
+        <button class="export-btn export-btn-outline" onclick="exportExcel('client')">&#128202; Excel</button>
+        <button class="export-btn export-btn-outline" onclick="exportDOC('client')">&#128221; Word</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p style="display:flex;align-items:center;justify-content:center;gap:8px;">Powered by <img class="technuf-logo-img" src="technuf-logo-dark.png" alt="Technuf" style="height:20px;"></p>
+</footer>
+
+<script>
+// ── State ──
+let config = null;
+let allAddOns = [];
+let carrierData = null;
+let selectedAddons = new Set();
+let addonsEnabled = false;
+let carrierEnabled = false;
+let isAnnual = false;
+
+// ── Init ──
+(async function init() {
+  document.getElementById('quoteDate').valueAsDate = new Date();
+  // Load URL params (margin, overhead from calculator)
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('margin')) document.getElementById('customMargin').value = params.get('margin');
+  if (params.get('overhead')) document.getElementById('customOverhead').value = params.get('overhead');
+
+  try {
+    config = await loadStaticConfig();
+
+    // Set defaults from config
+    document.getElementById('customRate').value = config.enterpriseRate || 0.08;
+    document.getElementById('customMargin').value = params.get('margin') || config.defaultProfitMargin || 50;
+    document.getElementById('customOverhead').value = params.get('overhead') || config.defaultOverhead || 15;
+    document.getElementById('customSetupFee').value = config.defaultSetupFee || 499;
+    document.getElementById('customOverage').value = config.defaultOverageRate || 0.05;
+    document.getElementById('customAnnDisc').value = config.defaultAnnualDiscount || 15;
+
+    // Add-ons
+    allAddOns = config.addOns || [];
+    renderAddons();
+
+    // Carrier
+    const cp = config.carrierPricing;
+    if (cp && cp.enabled && cp.carriers && cp.carriers.length) {
+      carrierData = cp;
+      document.getElementById('carrierMarkup').value = cp.defaultMarkupPct || 20;
+      document.getElementById('carrierSetup').value = cp.defaultSetupFee || 50;
+      document.getElementById('carrierSupport').value = cp.defaultSupportFee || 25;
+      const sel = document.getElementById('carrierSelect');
+      sel.innerHTML = cp.carriers.filter(c => c.enabled).map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
+      onCarrierChange();
+    }
+  } catch (e) { console.warn('Failed to load config', e); }
+
+  // Listen to all inputs
+  document.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('input', recalc);
+    el.addEventListener('change', recalc);
+  });
+
+  recalc();
+  applyTheme(localStorage.getItem('theme') || 'dark');
+})();
+
+// ── Calculations ──
+function calcPlan() {
+  const mins = Math.max(1, parseInt(document.getElementById('customMinutes').value) || 0);
+  const rate = parseFloat(document.getElementById('customRate').value) || 0;
+  const mult = parseFloat(document.getElementById('customMultiplier').value) || 1;
+  const margin = Math.min(parseFloat(document.getElementById('customMargin').value) || 0, 99);
+  const overhead = parseFloat(document.getElementById('customOverhead').value) || 0;
+
+  const baseCost = rate * mult * mins;
+  const overheadCost = baseCost * (overhead / 100);
+  const totalCost = baseCost + overheadCost;
+  const finalPrice = totalCost / (1 - margin / 100);
+  const profit = finalPrice - totalCost;
+  const profitPct = finalPrice > 0 ? (profit / finalPrice * 100) : 0;
+  const sellCPM = finalPrice / mins;
+  const costCPM = baseCost / mins;
+
+  return { baseCost, totalCost, finalPrice, profit, profitPct, sellCPM, costCPM, mins };
+}
+
+function calcAnnual(monthlyPrice, totalCost) {
+  const disc = parseFloat(document.getElementById('customAnnDisc').value) || 0;
+  const normal = monthlyPrice * 12;
+  const discounted = normal * (1 - disc / 100);
+  const annCost = totalCost * 12;
+  const profit = discounted - annCost;
+  const savings = normal - discounted;
+  const equiv = discounted / 12;
+  return { normal, discounted, annCost, profit, savings, equiv };
+}
+
+function calcCarrierCost() {
+  if (!carrierEnabled || !carrierData) return null;
+  const carrierId = document.getElementById('carrierSelect').value;
+  const typeId = document.getElementById('numberTypeSelect').value;
+  const carrier = carrierData.carriers.find(c => c.id === carrierId);
+  if (!carrier) return null;
+  const rates = carrier.numberTypes.find(t => t.id === typeId);
+  if (!rates) return null;
+
+  const count = Math.max(0, parseInt(document.getElementById('phoneCount').value) || 0);
+  const inb = Math.max(0, parseInt(document.getElementById('inboundMin').value) || 0);
+  const out = Math.max(0, parseInt(document.getElementById('outboundMin').value) || 0);
+  const markup = parseFloat(document.getElementById('carrierMarkup').value) || 0;
+  const support = parseFloat(document.getElementById('carrierSupport').value) || 0;
+  const setup = parseFloat(document.getElementById('carrierSetup').value) || 0;
+
+  const numCost = count * rates.numberMonthly;
+  const inbCost = inb * rates.inboundPerMin;
+  const outCost = out * rates.outboundPerMin;
+  const subtotal = numCost + inbCost + outCost;
+  const markupAmt = subtotal * (markup / 100);
+  const monthly = subtotal + markupAmt + support;
+  const profit = markupAmt + support;
+  const marginPct = monthly > 0 ? (profit / monthly * 100) : 0;
+
+  return { monthly, cost: subtotal, profit, marginPct, setup };
+}
+
+function getSelectedAddonTotals() {
+  if (!addonsEnabled) return { monthly: 0, oneTime: 0 };
+  let monthly = 0, oneTime = 0;
+  allAddOns.forEach(a => {
+    if (selectedAddons.has(a.id)) {
+      if (a.type === 'one-time') oneTime += a.price;
+      else monthly += a.price;
+    }
+  });
+  return { monthly, oneTime };
+}
+
+// ── Recalculate Everything ──
+function recalc() {
+  const plan = calcPlan();
+  const annual = calcAnnual(plan.finalPrice, plan.totalCost);
+  const carrier = calcCarrierCost();
+  const addons = getSelectedAddonTotals();
+
+  // Plan profit display
+  const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
+  document.getElementById('cpProfit').textContent = fmt(plan.profit);
+  document.getElementById('cpMargin').textContent = plan.profitPct.toFixed(1) + '%';
+  document.getElementById('cpSellCPM').textContent = '$' + plan.sellCPM.toFixed(4);
+  document.getElementById('cpCostCPM').textContent = '$' + plan.costCPM.toFixed(4);
+
+  // Carrier profit
+  if (carrier) {
+    document.getElementById('ccProfit').textContent = '$' + carrier.profit.toFixed(2);
+    document.getElementById('ccMargin').textContent = carrier.marginPct.toFixed(1) + '%';
+  }
+
+  // Summary
+  renderSummary(plan, annual, carrier, addons);
+}
+
+function renderSummary(plan, annual, carrier, addons) {
+  const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
+  const f2 = v => '$' + v.toFixed(2);
+  const setupFee = parseFloat(document.getElementById('customSetupFee').value) || 0;
+  const overageRate = parseFloat(document.getElementById('customOverage').value) || 0;
+  const carrierSetup = carrier ? carrier.setup : 0;
+
+  let html = '';
+
+  if (isAnnual) {
+    html += '<div class="summary-section-label">AI Calling Plan (Annual)</div>';
+    html += '<div class="summary-row"><span class="sr-label">' + plan.mins.toLocaleString() + ' min/mo</span><span class="sr-value">' + fmt(annual.discounted) + '/yr</span></div>';
+    html += '<div class="summary-row"><span class="sr-label" style="font-size:0.78rem;color:var(--text-muted);">(' + fmt(annual.equiv) + '/mo equivalent)</span><span class="sr-value" style="color:var(--success);font-size:0.78rem;">Save ' + fmt(annual.savings) + '</span></div>';
+  } else {
+    html += '<div class="summary-section-label">AI Calling Plan</div>';
+    html += '<div class="summary-row"><span class="sr-label">' + plan.mins.toLocaleString() + ' min/mo</span><span class="sr-value">' + fmt(plan.finalPrice) + '/mo</span></div>';
+  }
+
+  if (addonsEnabled && addons.monthly > 0) {
+    html += '<div class="summary-section-label">Add-Ons</div>';
+    allAddOns.forEach(a => {
+      if (!selectedAddons.has(a.id) || a.type === 'one-time') return;
+      const p = isAnnual ? a.price * 12 : a.price;
+      html += '<div class="summary-row"><span class="sr-label">' + a.name + '</span><span class="sr-value">' + fmt(p) + (isAnnual ? '/yr' : '/mo') + '</span></div>';
+    });
+  }
+
+  if (carrierEnabled && carrier) {
+    const cm = isAnnual ? carrier.monthly * 12 : carrier.monthly;
+    html += '<div class="summary-section-label">Phone Carrier</div>';
+    html += '<div class="summary-row"><span class="sr-label">Carrier monthly</span><span class="sr-value">' + fmt(cm) + (isAnnual ? '/yr' : '/mo') + '</span></div>';
+  }
+
+  // Totals
+  const planPrice = isAnnual ? annual.discounted : plan.finalPrice;
+  const addonTotal = isAnnual ? addons.monthly * 12 : addons.monthly;
+  const carrierTotal = carrier && carrierEnabled ? (isAnnual ? carrier.monthly * 12 : carrier.monthly) : 0;
+  const grandTotal = planPrice + addonTotal + carrierTotal;
+
+  html += '<div class="summary-row total"><span class="sr-label">Grand Total</span><span class="sr-value">' + fmt(grandTotal) + (isAnnual ? '/yr' : '/mo') + '</span></div>';
+
+  // One-time fees
+  const oneTimeTotal = setupFee + addons.oneTime + carrierSetup;
+  if (oneTimeTotal > 0) {
+    html += '<div class="summary-row onetime"><span class="sr-label">One-time fees</span><span class="sr-value">' + fmt(oneTimeTotal) + '</span></div>';
+  }
+
+  // Profit
+  const planProfit = isAnnual ? annual.profit : plan.profit;
+  const carrierProfit = carrier && carrierEnabled ? (isAnnual ? carrier.profit * 12 : carrier.profit) : 0;
+  const totalProfit = planProfit + carrierProfit;
+  const totalMargin = grandTotal > 0 ? (totalProfit / grandTotal * 100) : 0;
+
+  html += '<div class="summary-section-label">Your Profit</div>';
+  html += '<div class="summary-row profit"><span class="sr-label">Total Profit</span><span class="sr-value">' + fmt(totalProfit) + (isAnnual ? '/yr' : '/mo') + '</span></div>';
+  html += '<div class="summary-row profit"><span class="sr-label">Effective Margin</span><span class="sr-value">' + totalMargin.toFixed(1) + '%</span></div>';
+
+  if (overageRate > 0) {
+    html += '<div class="summary-section-label">Overage</div>';
+    html += '<div class="summary-row"><span class="sr-label">Beyond ' + plan.mins.toLocaleString() + ' min</span><span class="sr-value">$' + overageRate.toFixed(2) + '/min</span></div>';
+  }
+
+  document.getElementById('summaryBody').innerHTML = html;
+}
+
+// ── Add-Ons ──
+function renderAddons() {
+  const monthly = allAddOns.filter(a => a.type === 'monthly');
+  const oneTime = allAddOns.filter(a => a.type === 'one-time');
+  document.getElementById('monthlyAddonsGrid').innerHTML = monthly.map(addonCard).join('');
+  document.getElementById('onetimeAddonsGrid').innerHTML = oneTime.map(addonCard).join('');
+}
+
+function addonCard(a) {
+  const sel = selectedAddons.has(a.id) ? ' selected' : '';
+  return '<div class="addon-card' + sel + '" onclick="toggleAddon(\'' + a.id + '\')">' +
+    '<div class="addon-left"><span class="addon-icon">' + (a.icon || '&#9889;') + '</span>' +
+    '<div><div class="addon-name">' + a.name + '</div><div class="addon-desc">' + (a.desc || '') + '</div></div></div>' +
+    '<div class="addon-price">$' + a.price + (a.type === 'one-time' ? '' : '/mo') + '</div></div>';
+}
+
+function toggleAddon(id) {
+  if (!addonsEnabled) return;
+  if (selectedAddons.has(id)) selectedAddons.delete(id);
+  else selectedAddons.add(id);
+  renderAddons();
+  recalc();
+}
+
+function toggleAddons() {
+  addonsEnabled = !addonsEnabled;
+  document.getElementById('addonsToggle').classList.toggle('on', addonsEnabled);
+  const lbl = document.getElementById('addonsLabel');
+  lbl.textContent = addonsEnabled ? 'ENABLED' : 'OFF';
+  lbl.classList.toggle('on', addonsEnabled);
+  document.getElementById('addonsBody').style.display = addonsEnabled ? 'block' : 'none';
+  if (!addonsEnabled) selectedAddons.clear();
+  renderAddons();
+  recalc();
+}
+
+// ── Carrier ──
+function onCarrierChange() {
+  if (!carrierData) return;
+  const carrierId = document.getElementById('carrierSelect').value;
+  const carrier = carrierData.carriers.find(c => c.id === carrierId);
+  if (!carrier) return;
+  const sel = document.getElementById('numberTypeSelect');
+  sel.innerHTML = carrier.numberTypes.map(t => '<option value="' + t.id + '">' + t.name + '</option>').join('');
+  recalc();
+}
+
+function toggleCarrier() {
+  carrierEnabled = !carrierEnabled;
+  document.getElementById('carrierToggle').classList.toggle('on', carrierEnabled);
+  const lbl = document.getElementById('carrierLabel');
+  lbl.textContent = carrierEnabled ? 'ENABLED' : 'OFF';
+  lbl.classList.toggle('on', carrierEnabled);
+  document.getElementById('carrierBody').style.display = carrierEnabled ? 'block' : 'none';
+  recalc();
+}
+
+// ── Billing Toggle ──
+function toggleBilling() {
+  isAnnual = !isAnnual;
+  document.getElementById('billingToggle').classList.toggle('on', isAnnual);
+  document.getElementById('lblMonthly').classList.toggle('active', !isAnnual);
+  document.getElementById('lblAnnual').classList.toggle('active', isAnnual);
+  recalc();
+}
+
+// ── Shared data gathering ──
+function gatherInvoiceData() {
+  const plan = calcPlan();
+  const annual = calcAnnual(plan.finalPrice, plan.totalCost);
+  const carrier = calcCarrierCost();
+  const addons = getSelectedAddonTotals();
+  const setupFee = parseFloat(document.getElementById('customSetupFee').value) || 0;
+  const overageRate = parseFloat(document.getElementById('customOverage').value) || 0;
+  const carrierSetup = carrier && carrierEnabled ? carrier.setup : 0;
+  const carrierMonthly = carrier && carrierEnabled ? carrier.monthly : 0;
+  const carrierProfit = carrier && carrierEnabled ? carrier.profit : 0;
+  const grandMonthly = plan.finalPrice + addons.monthly + carrierMonthly;
+  const grandAnnual = annual.discounted + (addons.monthly * 12) + (carrierMonthly * 12);
+  const totalOneTime = setupFee + addons.oneTime + carrierSetup;
+  const totalProfit = plan.profit + carrierProfit;
+  const totalMargin = grandMonthly > 0 ? (totalProfit / grandMonthly * 100) : 0;
+  const selectedAddonList = allAddOns.filter(a => selectedAddons.has(a.id));
+
+  return {
+    plan, annual, carrier, addons, setupFee, overageRate,
+    carrierSetup, carrierMonthly, carrierProfit,
+    grandMonthly, grandAnnual, totalOneTime, totalProfit, totalMargin,
+    selectedAddonList,
+    clientName: document.getElementById('clientName').value || 'Client',
+    contact: document.getElementById('contactPerson').value || '',
+    email: document.getElementById('clientEmail').value || '',
+    date: document.getElementById('quoteDate').value || new Date().toISOString().slice(0,10),
+    preparedBy: document.getElementById('preparedBy').value || '',
+  };
+}
+
+// ── PDF Export ──
+function exportPDF(mode) {
+  const d = gatherInvoiceData();
+  const isAdmin = mode === 'admin';
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
+  const f2 = v => '$' + v.toFixed(2);
+
+  // Header
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.text(isAdmin ? 'iConnect Custom Plan — Admin Invoice' : 'iConnect Custom Plan Quote', 14, 22);
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(100);
+  doc.text('Prepared for: ' + d.clientName + (d.contact ? ' (' + d.contact + ')' : '') + (d.email ? ' — ' + d.email : ''), 14, 32);
+  doc.text('Date: ' + d.date + (d.preparedBy ? '  |  Prepared by: ' + d.preparedBy : ''), 14, 38);
+  doc.setTextColor(0);
+
+  // Plan details
+  const planRows = [
+    ['Minutes / Month', d.plan.mins.toLocaleString()],
+    ['Monthly Price', fmt(d.plan.finalPrice)],
+    ['Annual Price (discounted)', fmt(d.annual.discounted)],
+    ['Monthly Equivalent (annual)', fmt(d.annual.equiv)],
+    ['Annual Savings', fmt(d.annual.savings)],
+    ['Setup Fee', fmt(d.setupFee)],
+    ['Overage Rate', f2(d.overageRate) + '/min'],
+  ];
+  if (isAdmin) {
+    planRows.push(['Base Cost (Technuf)', f2(d.plan.baseCost)]);
+    planRows.push(['Total Cost (with overhead)', f2(d.plan.totalCost)]);
+    planRows.push(['Monthly Profit', fmt(d.plan.profit)]);
+    planRows.push(['Profit Margin', d.plan.profitPct.toFixed(1) + '%']);
+    planRows.push(['Sell Price / min', '$' + d.plan.sellCPM.toFixed(4)]);
+    planRows.push(['Technuf Cost / min', '$' + d.plan.costCPM.toFixed(4)]);
+  }
+
+  doc.autoTable({ startY: 46, head: [['Custom Plan Details', '']], body: planRows, theme: 'striped', headStyles: { fillColor: [124, 92, 252] } });
+  let y = doc.lastAutoTable.finalY + 8;
+
+  // Add-ons
+  if (addonsEnabled && d.selectedAddonList.length > 0) {
+    const addonRows = d.selectedAddonList.map(a => [a.name, a.type === 'one-time' ? 'One-time' : 'Monthly', '$' + a.price + (a.type === 'one-time' ? '' : '/mo')]);
+    doc.autoTable({ startY: y, head: [['Add-On', 'Type', 'Price']], body: addonRows, theme: 'striped', headStyles: { fillColor: [124, 92, 252] } });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // Carrier
+  if (carrierEnabled && d.carrier) {
+    const cRows = [['Carrier Monthly', f2(d.carrier.monthly)], ['Carrier Setup Fee', f2(d.carrier.setup)]];
+    if (isAdmin) { cRows.push(['Carrier Profit/mo', f2(d.carrier.profit)]); cRows.push(['Carrier Margin', d.carrier.marginPct.toFixed(1) + '%']); }
+    doc.autoTable({ startY: y, head: [['Phone Carrier', '']], body: cRows, theme: 'striped', headStyles: { fillColor: [124, 92, 252] } });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // Summary
+  const summaryRows = [
+    ['Grand Total (Monthly)', fmt(d.grandMonthly) + '/mo'],
+    ['Grand Total (Annual)', fmt(d.grandAnnual) + '/yr'],
+    ['One-Time Fees', fmt(d.totalOneTime)],
+  ];
+  if (isAdmin) {
+    summaryRows.push(['Total Monthly Profit', fmt(d.totalProfit)]);
+    summaryRows.push(['Effective Margin', d.totalMargin.toFixed(1) + '%']);
+  }
+  doc.autoTable({ startY: y, head: [['Summary', '']], body: summaryRows, theme: 'striped', headStyles: { fillColor: [34, 232, 122] } });
+
+  // Footer
+  doc.setFontSize(8); doc.setTextColor(150);
+  doc.text('Generated by iConnect Pricing Calculator | Powered by Technuf', 14, doc.internal.pageSize.height - 10);
+  doc.save('iConnect-' + (isAdmin ? 'Admin' : 'Client') + '-Invoice-' + d.clientName.replace(/\s+/g, '-') + '.pdf');
+}
+
+// ── Excel Export ──
+function exportExcel(mode) {
+  const d = gatherInvoiceData();
+  const isAdmin = mode === 'admin';
+  const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
+  const f2 = v => '$' + v.toFixed(2);
+
+  const rows = [
+    [isAdmin ? 'iConnect Custom Plan — Admin Invoice' : 'iConnect Custom Plan Quote'],
+    ['Client', d.clientName, 'Contact', d.contact, 'Email', d.email],
+    ['Date', d.date, 'Prepared By', d.preparedBy],
+    [],
+    ['PLAN DETAILS'],
+    ['Minutes / Month', d.plan.mins],
+    ['Monthly Price', fmt(d.plan.finalPrice)],
+    ['Annual Price (discounted)', fmt(d.annual.discounted)],
+    ['Monthly Equivalent (annual)', fmt(d.annual.equiv)],
+    ['Annual Savings', fmt(d.annual.savings)],
+    ['Setup Fee', fmt(d.setupFee)],
+    ['Overage Rate', f2(d.overageRate) + '/min'],
+  ];
+
+  if (isAdmin) {
+    rows.push(['Base Cost (Technuf)', f2(d.plan.baseCost)]);
+    rows.push(['Total Cost (with overhead)', f2(d.plan.totalCost)]);
+    rows.push(['Monthly Profit', fmt(d.plan.profit)]);
+    rows.push(['Profit Margin', d.plan.profitPct.toFixed(1) + '%']);
+    rows.push(['Sell Price / min', '$' + d.plan.sellCPM.toFixed(4)]);
+    rows.push(['Technuf Cost / min', '$' + d.plan.costCPM.toFixed(4)]);
+  }
+
+  if (addonsEnabled && d.selectedAddonList.length > 0) {
+    rows.push([]);
+    rows.push(['ADD-ONS']);
+    rows.push(['Name', 'Type', 'Price']);
+    d.selectedAddonList.forEach(a => rows.push([a.name, a.type === 'one-time' ? 'One-time' : 'Monthly', '$' + a.price + (a.type === 'one-time' ? '' : '/mo')]));
+  }
+
+  if (carrierEnabled && d.carrier) {
+    rows.push([]);
+    rows.push(['PHONE CARRIER']);
+    rows.push(['Carrier Monthly', f2(d.carrier.monthly)]);
+    rows.push(['Carrier Setup Fee', f2(d.carrier.setup)]);
+    if (isAdmin) { rows.push(['Carrier Profit/mo', f2(d.carrier.profit)]); rows.push(['Carrier Margin', d.carrier.marginPct.toFixed(1) + '%']); }
+  }
+
+  rows.push([]);
+  rows.push(['SUMMARY']);
+  rows.push(['Grand Total (Monthly)', fmt(d.grandMonthly) + '/mo']);
+  rows.push(['Grand Total (Annual)', fmt(d.grandAnnual) + '/yr']);
+  rows.push(['One-Time Fees', fmt(d.totalOneTime)]);
+  if (isAdmin) {
+    rows.push(['Total Monthly Profit', fmt(d.totalProfit)]);
+    rows.push(['Effective Margin', d.totalMargin.toFixed(1) + '%']);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 25 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Custom Plan');
+  XLSX.writeFile(wb, 'iConnect-' + (isAdmin ? 'Admin' : 'Client') + '-Invoice-' + d.clientName.replace(/\s+/g, '-') + '.xlsx');
+}
+
+// ── Word (HTML-based DOC) Export ──
+function exportDOC(mode) {
+  const d = gatherInvoiceData();
+  const isAdmin = mode === 'admin';
+  const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
+  const f2 = v => '$' + v.toFixed(2);
+
+  let html = '<html><head><meta charset="utf-8"><style>body{font-family:Calibri,sans-serif;color:#222;padding:24px;}h1{color:#7c5cfc;font-size:22px;}table{border-collapse:collapse;width:100%;margin:16px 0;}th,td{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:13px;}th{background:#7c5cfc;color:#fff;font-weight:700;}tr:nth-child(even){background:#f9f8ff;}.section{font-size:16px;font-weight:700;color:#7c5cfc;margin:24px 0 8px;}.green th{background:#22e87a;color:#fff;}.meta{color:#666;font-size:12px;margin:4px 0;}</style></head><body>';
+
+  html += '<h1>' + (isAdmin ? 'iConnect Custom Plan — Admin Invoice' : 'iConnect Custom Plan Quote') + '</h1>';
+  html += '<p class="meta">Prepared for: <strong>' + d.clientName + '</strong>' + (d.contact ? ' (' + d.contact + ')' : '') + (d.email ? ' — ' + d.email : '') + '</p>';
+  html += '<p class="meta">Date: ' + d.date + (d.preparedBy ? ' &nbsp;|&nbsp; Prepared by: ' + d.preparedBy : '') + '</p>';
+
+  // Plan table
+  html += '<div class="section">Custom Plan Details</div>';
+  html += '<table><tr><th>Item</th><th>Value</th></tr>';
+  html += '<tr><td>Minutes / Month</td><td>' + d.plan.mins.toLocaleString() + '</td></tr>';
+  html += '<tr><td>Monthly Price</td><td>' + fmt(d.plan.finalPrice) + '</td></tr>';
+  html += '<tr><td>Annual Price (discounted)</td><td>' + fmt(d.annual.discounted) + '</td></tr>';
+  html += '<tr><td>Monthly Equivalent (annual)</td><td>' + fmt(d.annual.equiv) + '</td></tr>';
+  html += '<tr><td>Annual Savings</td><td>' + fmt(d.annual.savings) + '</td></tr>';
+  html += '<tr><td>Setup Fee</td><td>' + fmt(d.setupFee) + '</td></tr>';
+  html += '<tr><td>Overage Rate</td><td>' + f2(d.overageRate) + '/min</td></tr>';
+  if (isAdmin) {
+    html += '<tr><td>Base Cost (Technuf)</td><td>' + f2(d.plan.baseCost) + '</td></tr>';
+    html += '<tr><td>Total Cost (with overhead)</td><td>' + f2(d.plan.totalCost) + '</td></tr>';
+    html += '<tr><td>Monthly Profit</td><td style="color:#22e87a;font-weight:700;">' + fmt(d.plan.profit) + '</td></tr>';
+    html += '<tr><td>Profit Margin</td><td style="color:#22e87a;font-weight:700;">' + d.plan.profitPct.toFixed(1) + '%</td></tr>';
+    html += '<tr><td>Sell Price / min</td><td>' + '$' + d.plan.sellCPM.toFixed(4) + '</td></tr>';
+    html += '<tr><td>Technuf Cost / min</td><td>' + '$' + d.plan.costCPM.toFixed(4) + '</td></tr>';
+  }
+  html += '</table>';
+
+  // Add-ons
+  if (addonsEnabled && d.selectedAddonList.length > 0) {
+    html += '<div class="section">Add-Ons</div><table><tr><th>Name</th><th>Type</th><th>Price</th></tr>';
+    d.selectedAddonList.forEach(a => { html += '<tr><td>' + a.name + '</td><td>' + (a.type === 'one-time' ? 'One-time' : 'Monthly') + '</td><td>$' + a.price + (a.type === 'one-time' ? '' : '/mo') + '</td></tr>'; });
+    html += '</table>';
+  }
+
+  // Carrier
+  if (carrierEnabled && d.carrier) {
+    html += '<div class="section">Phone Carrier</div><table><tr><th>Item</th><th>Value</th></tr>';
+    html += '<tr><td>Carrier Monthly</td><td>' + f2(d.carrier.monthly) + '</td></tr>';
+    html += '<tr><td>Carrier Setup Fee</td><td>' + f2(d.carrier.setup) + '</td></tr>';
+    if (isAdmin) {
+      html += '<tr><td>Carrier Profit/mo</td><td style="color:#22e87a;font-weight:700;">' + f2(d.carrier.profit) + '</td></tr>';
+      html += '<tr><td>Carrier Margin</td><td style="color:#22e87a;font-weight:700;">' + d.carrier.marginPct.toFixed(1) + '%</td></tr>';
+    }
+    html += '</table>';
+  }
+
+  // Summary
+  html += '<div class="section">Summary</div><table class="green"><tr><th>Item</th><th>Value</th></tr>';
+  html += '<tr><td><strong>Grand Total (Monthly)</strong></td><td><strong>' + fmt(d.grandMonthly) + '/mo</strong></td></tr>';
+  html += '<tr><td><strong>Grand Total (Annual)</strong></td><td><strong>' + fmt(d.grandAnnual) + '/yr</strong></td></tr>';
+  html += '<tr><td>One-Time Fees</td><td>' + fmt(d.totalOneTime) + '</td></tr>';
+  if (isAdmin) {
+    html += '<tr><td>Total Monthly Profit</td><td style="color:#22e87a;font-weight:700;">' + fmt(d.totalProfit) + '</td></tr>';
+    html += '<tr><td>Effective Margin</td><td style="color:#22e87a;font-weight:700;">' + d.totalMargin.toFixed(1) + '%</td></tr>';
+  }
+  html += '</table>';
+
+  html += '<p class="meta" style="margin-top:32px;border-top:1px solid #ddd;padding-top:12px;">Generated by iConnect Pricing Calculator | Powered by Technuf</p>';
+  html += '</body></html>';
+
+  const blob = new Blob([html], { type: 'application/msword' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'iConnect-' + (isAdmin ? 'Admin' : 'Client') + '-Invoice-' + d.clientName.replace(/\s+/g, '-') + '.doc';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+// ── Theme ──
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const t = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('theme', t);
+  applyTheme(t);
+}
+function applyTheme(t) {
+  const d = t === 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').textContent = d ? '☀️' : '🌙';
+  document.querySelectorAll('.nav-logo-img').forEach(i => i.src = d ? 'logo-dark.png' : 'logo-light.png');
+  document.querySelectorAll('.technuf-logo-img').forEach(i => i.src = d ? 'technuf-logo-dark.png' : 'technuf-logo-light.jpg');
+  const fav = document.querySelector('link[rel="icon"]');
+  if (fav) fav.href = d ? 'icon-dark.png' : 'icon-light.png';
+}
+
+document.getElementById('carrierSelect').addEventListener('change', onCarrierChange);
+</script>
+</body>
+</html>
